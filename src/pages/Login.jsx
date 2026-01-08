@@ -41,7 +41,6 @@ const Login = () => {
       } else {
         await loginWithEmail(email, password);
       }
-      // Після успішного входу/реєстрації — редирект в App.jsx обробить профіль
       navigate("/");
     } catch (err) {
       let message = err.message;

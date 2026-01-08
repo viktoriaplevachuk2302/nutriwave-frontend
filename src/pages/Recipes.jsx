@@ -25,7 +25,7 @@ const Recipes = () => {
         setRecipes(res.data);
         setFilteredRecipes(res.data);
       })
-      .catch((err) => console.error("Помилка завантаження рецептів"));
+      .catch((err) => console.error("Помилка завантаження рецептів:", err));
   }, []);
 
   useEffect(() => {
@@ -36,11 +36,11 @@ const Recipes = () => {
     }
   }, [selectedCategory, recipes]);
 
-  const handleAddToDiary = async () => {
-    if (!selectedRecipe || !selectedMealType) return;
+  const handleAddToDiary = async (mealType) => {
+    if (!selectedRecipe) return;
 
     const data = {
-      mealType: selectedMealType,
+      mealType,
       foodName: selectedRecipe.title,
       calories: selectedRecipe.calories,
       protein: selectedRecipe.protein || 0,
@@ -53,7 +53,7 @@ const Recipes = () => {
       await axios.post("https://nutriwave-backend.onrender.com/api/diary/meal", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      alert(`${selectedRecipe.title} додано до ${categories[selectedMealType]}!`);
+      alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
       setShowAddModal(false);
       setSelectedRecipe(null);
     } catch (err) {
@@ -68,7 +68,7 @@ const Recipes = () => {
       </h1>
 
       {/* Фільтр за категорією */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginBottom: "3rem", flexWrap: "wrap" }}>
         {Object.keys(categories).map((key) => (
           <button
             key={key}
@@ -77,6 +77,10 @@ const Recipes = () => {
             style={{
               background: selectedCategory === key ? "#5B7133" : "#C8D094",
               color: selectedCategory === key ? "white" : "#5B7133",
+              padding: "0.75rem 1.5rem",
+              borderRadius: "9999px",
+              fontWeight: "600",
+              transition: "all 0.3s",
             }}
           >
             {categories[key]}
@@ -96,21 +100,31 @@ const Recipes = () => {
           <div
             key={recipe.id}
             className="card"
-            style={{ cursor: "pointer", overflow: "hidden" }}
+            style={{ cursor: "pointer", overflow: "hidden", transition: "transform 0.3s" }}
             onClick={() => setSelectedRecipe(recipe)}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-8px)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
             <img
               src={recipe.image}
               alt={recipe.title}
               style={{ width: "100%", height: "220px", objectFit: "cover", borderRadius: "16px 16px 0 0" }}
-              onError={(e) => (e.target.src = "https://via.placeholder.com/320x220?text=Рецепт")}
+              onError={(e) => (e.target.src = "https://via.placeholder.com/320x220?text=Рецепт+NutriWave")}
             />
             <div style={{ padding: "1.5rem" }}>
-              <h3 style={{ color: "#5B7133", marginBottom: "0.5rem" }}>{recipe.title}</h3>
+              <h3 style={{ color: "#5B7133", marginBottom: "0.5rem", fontSize: "1.4rem" }}>
+                {recipe.title}
+              </h3>
+              <p style={{ color: "#666", marginBottom: "1rem" }}>
+                {recipe.shortDescription}
+              </p>
               <p style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#5B7133" }}>
                 {recipe.calories} ккал
               </p>
-              <p style={{ color: "#666", marginTop: "0.5rem" }}>
+              <p style={{ fontSize: "0.95rem", color: "#666" }}>
+                Б: {recipe.protein || 0}г · В: {recipe.carbs || 0}г · Ж: {recipe.fat || 0}г
+              </p>
+              <p style={{ color: "#666", marginTop: "0.5rem", fontSize: "0.9rem" }}>
                 Категорія: {categories[recipe.category]}
               </p>
             </div>
@@ -118,7 +132,7 @@ const Recipes = () => {
         ))}
       </div>
 
-      {/* Деталі рецепту при кліку */}
+      {/* Детальний перегляд рецепту */}
       {selectedRecipe && !showAddModal && (
         <div
           style={{
@@ -137,47 +151,52 @@ const Recipes = () => {
         >
           <div
             className="card"
-            style={{ width: "600px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto" }}
+            style={{ width: "700px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto" }}
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={selectedRecipe.image}
               alt={selectedRecipe.title}
-              style={{ width: "100%", borderRadius: "16px", marginBottom: "1.5rem" }}
+              style={{ width: "100%", height: "300px", objectFit: "cover", borderRadius: "16px 16px 0 0" }}
             />
-            <h2 style={{ color: "#5B7133", textAlign: "center" }}>{selectedRecipe.title}</h2>
-            <p style={{ fontSize: "1.8rem", fontWeight: "bold", color: "#5B7133", textAlign: "center" }}>
-              {selectedRecipe.calories} ккал
-            </p>
+            <div style={{ padding: "2rem" }}>
+              <h2 style={{ color: "#5B7133", textAlign: "center", marginBottom: "1rem" }}>
+                {selectedRecipe.title}
+              </h2>
+              <p style={{ fontSize: "1.8rem", fontWeight: "bold", color: "#5B7133", textAlign: "center" }}>
+                {selectedRecipe.calories} ккал
+              </p>
+              <p style={{ textAlign: "center", color: "#666", marginBottom: "2rem" }}>
+                Б: {selectedRecipe.protein || 0}г · В: {selectedRecipe.carbs || 0}г · Ж: {selectedRecipe.fat || 0}г
+              </p>
 
-            <div style={{ margin: "2rem 0" }}>
               <h3 style={{ color: "#5B7133", marginBottom: "1rem" }}>Інгредієнти:</h3>
-              <ul style={{ paddingLeft: "1.5rem", lineHeight: "1.8rem" }}>
+              <ul style={{ paddingLeft: "1.5rem", lineHeight: "1.8rem", marginBottom: "2rem" }}>
                 {selectedRecipe.ingredients?.map((ing, i) => (
                   <li key={i}>{ing}</li>
                 ))}
               </ul>
-            </div>
 
-            <div style={{ margin: "2rem 0" }}>
               <h3 style={{ color: "#5B7133", marginBottom: "1rem" }}>Приготування:</h3>
-              <p style={{ lineHeight: "1.8rem" }}>{selectedRecipe.instructions}</p>
+              <p style={{ lineHeight: "1.8rem", marginBottom: "2rem" }}>
+                {selectedRecipe.instructions}
+              </p>
+
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="btn btn-primary"
+                style={{ width: "100%", padding: "1rem", fontSize: "1.2rem" }}
+              >
+                Додати до раціону
+              </button>
+
+              <button
+                onClick={() => setSelectedRecipe(null)}
+                style={{ width: "100%", marginTop: "1rem", background: "none", color: "#5B7133", border: "none", cursor: "pointer", fontSize: "1rem" }}
+              >
+                Закрити
+              </button>
             </div>
-
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: "1rem", fontSize: "1.2rem" }}
-            >
-              Додати до щоденника
-            </button>
-
-            <button
-              onClick={() => setSelectedRecipe(null)}
-              style={{ width: "100%", marginTop: "1rem", background: "none", color: "#5B7133", border: "none", cursor: "pointer" }}
-            >
-              Закрити
-            </button>
           </div>
         </div>
       )}
@@ -206,28 +225,7 @@ const Recipes = () => {
               {["breakfast", "lunch", "dinner", "snack"].map((meal) => (
                 <button
                   key={meal}
-                  onClick={async () => {
-                    const data = {
-                      mealType: meal,
-                      foodName: selectedRecipe.title,
-                      calories: selectedRecipe.calories,
-                      protein: selectedRecipe.protein || 0,
-                      carbs: selectedRecipe.carbs || 0,
-                      fat: selectedRecipe.fat || 0,
-                    };
-
-                    try {
-                      const token = await auth.currentUser.getIdToken();
-                      await axios.post("https://nutriwave-backend.onrender.com/api/diary/meal", data, {
-                        headers: { Authorization: `Bearer ${token}` },
-                      });
-                      alert(`${selectedRecipe.title} додано до ${categories[meal]}!`);
-                      setShowAddModal(false);
-                      setSelectedRecipe(null);
-                    } catch (err) {
-                      alert("Помилка додавання");
-                    }
-                  }}
+                  onClick={() => handleAddToDiary(meal)}
                   className="btn btn-primary"
                 >
                   {categories[meal]}

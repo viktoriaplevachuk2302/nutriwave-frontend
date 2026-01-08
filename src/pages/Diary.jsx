@@ -24,53 +24,59 @@ const Diary = () => {
   });
 
   const mealData = {
-    breakfast: { title: "Сніданок", range: "366-513 ккал" },
-    lunch: { title: "Обід", range: "439-586 ккал" },
-    dinner: { title: "Вечеря", range: "571-747 ккал" },
-    snack: { title: "Перекус", range: "0-88 ккал" },
+    breakfast: { title: "Сніданок", range: "366-513 ккал", max: 513 },
+    lunch: { title: "Обід", range: "439-586 ккал", max: 586 },
+    dinner: { title: "Вечеря", range: "571-747 ккал", max: 747 },
+    snack: { title: "Перекус", range: "0-88 ккал", max: 88 },
   };
 
-  const getMealColor = (calories, max) => {
+  const getMealCardColor = (calories, max) => {
     if (calories <= max) return "#C8D094";
-    if (calories <= max * 1.1) return "#f0e68c";
-    if (calories <= max * 1.3) return "#ffcc80";
-    return "#ff8a80";
+    if (calories <= max * 1.1) return "#f0e68c"; // жовтий
+    if (calories <= max * 1.3) return "#ffcc80"; // помаранчевий
+    return "#ff8a80"; // червоний
+  };
+
+  const fetchDiary = async (date) => {
+    if (!auth.currentUser) return;
+
+    setLoading(true);
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await axios.get(`https://nutriwave-backend.onrender.com/api/diary${date ? '?date=' + date : ''}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDiary(res.data || {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+      });
+    } catch (err) {
+      console.error("Помилка завантаження щоденника:", err);
+      setDiary({
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const fetchDiary = async () => {
-      if (!auth.currentUser) return;
-
-      setLoading(true);
-
-      try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await axios.get(`https://nutriwave-backend.onrender.com/api/diary?date=${selectedDate}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setDiary(res.data || {
-          totalCalories: 0,
-          totalProtein: 0,
-          totalCarbs: 0,
-          totalFat: 0,
-          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        });
-      } catch (err) {
-        console.error("Помилка завантаження щоденника:", err);
-        setDiary({
-          totalCalories: 0,
-          totalProtein: 0,
-          totalCarbs: 0,
-          totalFat: 0,
-          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDiary();
+    fetchDiary(selectedDate);
   }, [selectedDate]);
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr + "T00:00:00");
+    const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+    return date.toLocaleDateString("uk-UA", options);
+  };
 
   const openAddModal = (meal) => {
     setSelectedMeal(meal);
@@ -88,7 +94,7 @@ const Diary = () => {
       protein: parseFloat(foodForm.protein) || 0,
       carbs: parseFloat(foodForm.carbs) || 0,
       fat: parseFloat(foodForm.fat) || 0,
-      date: selectedDate,  // додаємо дату, щоб запис йшов на обраний день
+      date: selectedDate,
     };
 
     try {
@@ -98,9 +104,9 @@ const Diary = () => {
       });
       alert("Їжу додано!");
       setShowModal(false);
-      fetchDiary(selectedDate); // оновлюємо щоденник за обрану дату
+      fetchDiary(selectedDate);
     } catch (err) {
-      alert("Помилка додавання");
+      alert("Помилка додавання їжі");
     }
   };
 
@@ -120,13 +126,9 @@ const Diary = () => {
     }
   };
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr + "T00:00:00");
-    const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-    return date.toLocaleDateString("uk-UA", options);
-  };
-
-  if (loading) return <div style={{ textAlign: "center", padding: "4rem" }}>Завантаження щоденника...</div>;
+  if (loading) {
+    return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження щоденника...</div>;
+  }
 
   return (
     <div className="container">
@@ -148,30 +150,30 @@ const Diary = () => {
             borderRadius: "12px",
             border: "1px solid #C8D094",
             fontSize: "1rem",
+            marginRight: "1rem",
           }}
         />
-<button
-    onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
-    className="btn btn-primary" 
-    style={{ padding: "0.75rem 1.5rem" }}
-  >
-    Сьогодні
-  </button>
-</div>
+        <button
+          onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
+          className="btn btn-primary"
+          style={{ padding: "0.75rem 1.5rem" }}
+        >
+          Сьогодні
+        </button>
+      </div>
 
       <p style={{ textAlign: "center", fontSize: "1.3rem", color: "#5B7133", marginBottom: "2rem" }}>
         {formatDate(selectedDate)}
       </p>
 
       {Object.keys(mealData).map((meal) => {
-        const { title, range } = mealData[meal];
+        const { title, range, max } = mealData[meal];
         const foods = diary.meals[meal] || [];
         const mealCalories = foods.reduce((sum, f) => sum + f.calories, 0);
-        const max = parseInt(range.split("-")[1]);
-        const color = getMealColor(mealCalories, max);
+        const cardColor = getMealCardColor(mealCalories, max);
 
         return (
-          <div key={meal} className="card" style={{ background: color, marginBottom: "2rem" }}>
+          <div key={meal} className="card" style={{ background: cardColor, marginBottom: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <h2 style={{ color: "#5B7133" }}>{title}</h2>
               <div>

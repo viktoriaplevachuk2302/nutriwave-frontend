@@ -296,7 +296,7 @@ const Dashboard = () => {
             <form onSubmit={handleAddFood}>
               <input
                 type="text"
-                placeholder="Назва їжі"
+                placeholder="Назва їжі (наприклад, Овсянка з ягодами)"
                 value={foodForm.foodName}
                 onChange={(e) => setFoodForm({ ...foodForm, foodName: e.target.value })}
                 required

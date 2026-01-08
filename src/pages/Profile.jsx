@@ -100,7 +100,7 @@ const Profile = () => {
       setIsEditing(false);
       window.location.reload();
     } catch (err) {
-      alert("Помилка збереження");
+      alert("Помилка збереження профілю");
     }
   };
 
@@ -114,7 +114,7 @@ const Profile = () => {
 
   const userPhoto = auth.currentUser?.photoURL || "https://via.placeholder.com/140?text=Фото";
 
-  // Обов'язкова форма при першому вході або редагуванні
+  // Перегляд або редагування профілю
   if (!profile || !profile.age || isEditing) {
     return (
       <div style={{ minHeight: "100vh", background: "#f8f8f5" }}>
@@ -251,6 +251,21 @@ const Profile = () => {
   // Перегляд профілю після заповнення
   const dailyCalories = calculateDailyCalories();
 
+  // Словники для відображення тексту
+  const activityText = {
+    sedentary: "Сидячий",
+    light: "Легка",
+    moderate: "Помірна",
+    active: "Висока",
+    very_active: "Дуже висока",
+  };
+
+  const goalText = {
+    lose: "Схуднути",
+    maintain: "Підтримувати вагу",
+    gain: "Набрати вагу",
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#f8f8f5" }}>
       <div className="container">
@@ -270,22 +285,8 @@ const Profile = () => {
             <p><strong>Зріст:</strong> {profile.height} см</p>
             <p><strong>Вага:</strong> {profile.currentWeight} кг</p>
             <p><strong>Стать:</strong> {profile.gender === "female" ? "Жіноча" : "Чоловіча"}</p>
-            <p><strong>Активність:</strong> {
-              {
-                sedentary: "Сидячий",
-                light: "Легка",
-                moderate: "Помірна",
-                active: "Висока",
-                very_active: "Дуже висока",
-              }[profile.activityLevel]
-            }</p>
-            <p><strong>Ціль:</strong> {
-              {
-                lose: "Схуднути",
-                maintain: "Підтримувати вагу",
-                gain: "Набрати вагу",
-              }[profile.goal]
-            }</p>
+            <p><strong>Активність:</strong> {activityText[profile.activityLevel] || profile.activityLevel}</p>
+            <p><strong>Ціль:</strong> {goalText[profile.goal] || profile.goal}</p>
           </div>
 
           <div className="card" style={{ background: "#C8D094", padding: "1.5rem", marginBottom: "2rem" }}>
@@ -296,14 +297,14 @@ const Profile = () => {
             </p>
           </div>
 
-          {/* === ДОДАНИЙ БЛОК ПРО ВИБРАНУ ПРОГРАМУ === */}
-          {profile?.selectedProgram && (
+          {/* Майбутнє місце для вибраної програми */}
+          {/* {profile.selectedProgram && (
             <div className="card" style={{ background: "#C8D094", textAlign: "center", marginBottom: "2rem" }}>
               <p style={{ fontSize: "1.3rem", color: "#5B7133" }}>
                 Вибрана програма: <strong>{profile.selectedProgram}</strong>
               </p>
             </div>
-          )}
+          )} */}
 
           <button
             className="btn btn-primary"

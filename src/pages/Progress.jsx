@@ -34,13 +34,13 @@ const Progress = () => {
         });
         setWeightHistory(weightRes.data.sort((a, b) => a.date.localeCompare(b.date)));
 
-        // Завантажуємо профіль для цільової ваги
-        const profileRes = await axios.get("hhttps://nutriwave-backend.onrender.com/api/users/me", {
+        // Завантажуємо профіль (для майбутнього використання)
+        const profileRes = await axios.get("https://nutriwave-backend.onrender.com/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(profileRes.data);
       } catch (err) {
-        console.error("Помилка завантаження прогресу");
+        console.error("Помилка завантаження прогресу:", err);
       } finally {
         setLoading(false);
       }
@@ -68,7 +68,9 @@ const Progress = () => {
     }
   };
 
-  if (loading) return <div style={{ textAlign: "center", padding: "4rem" }}>Завантаження прогресу...</div>;
+  if (loading) {
+    return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження прогресу...</div>;
+  }
 
   const latestWeight = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weight : 0;
   const initialWeight = weightHistory.length > 0 ? weightHistory[0].weight : latestWeight;
@@ -117,11 +119,16 @@ const Progress = () => {
       {/* Поточна вага та втрата */}
       <div className="card" style={{ textAlign: "center", background: "#C8D094" }}>
         <h2 style={{ color: "#5B7133", fontSize: "2rem", marginBottom: "0.5rem" }}>
-          Поточна вага: {latestWeight} кг
+          Поточна вага: {latestWeight.toFixed(1)} кг
         </h2>
         {lostWeight > 0 && (
           <p style={{ fontSize: "1.5rem", color: "#5B7133", fontWeight: "bold" }}>
             Ви скинули {lostWeight.toFixed(1)} кг!
+          </p>
+        )}
+        {lostWeight < 0 && (
+          <p style={{ fontSize: "1.5rem", color: "#d32f2f", fontWeight: "bold" }}>
+            Ви набрали {Math.abs(lostWeight).toFixed(1)} кг
           </p>
         )}
         <p style={{ fontSize: "1.3rem", color: "#5B7133", marginTop: "1rem" }}>
@@ -148,7 +155,7 @@ const Progress = () => {
         <h3 style={{ textAlign: "center", color: "#5B7133", marginBottom: "1rem" }}>
           Додати вагу сьогодні
         </h3>
-        <form onSubmit={handleAddWeight} style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
+        <form onSubmit={handleAddWeight} style={{ display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
           <input
             type="number"
             step="0.1"
@@ -164,7 +171,7 @@ const Progress = () => {
         </form>
       </div>
 
-      {/* Серія днів (приклад, можна розширити) */}
+      {/* Серія днів */}
       <div className="card" style={{ textAlign: "center", background: "#C8D094" }}>
         <p style={{ fontSize: "1.3rem", color: "#5B7133" }}>
           Поточна серія: 0 днів
