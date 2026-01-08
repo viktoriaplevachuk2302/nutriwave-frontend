@@ -1,0 +1,142 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f8f5;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(91, 113, 51, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: #5B7133;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #4a5d2a;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(91, 113, 51, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  margin: 0 0.5rem;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.navbar {
+  background: #5B7133;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(91, 113, 51, 0.2);
+}
+
+.navbar h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.meal-card {
+  background: #C8D094;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.meal-card:hover {
+  background: #b8c084;
+  transform: translateY(-5px);
+}
+
+.meal-card h3 {
+  color: #5B7133;
+  margin-bottom: 0.5rem;
+}
+
+.meal-card p {
+  color: #5B7133;
+  font-weight: 500;
+}
+
+.progress-circle {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  margin: 0 auto;
+}
+
+.progress-circle svg {
+  transform: rotate(-90deg);
+}
+
+.progress-background {
+  stroke: #e8f0e0;
+}
+
+.progress-fill {
+  stroke: #5B7133;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.progress-text strong {
+  font-size: 2.5rem;
+  color: #5B7133;
+}
+
+.progress-text span {
+  font-size: 1rem;
+  color: #666;
+}
+
+.macro-item {
+  text-align: center;
+}
+
+.macro-item strong {
+  color: #5B7133;
+}
