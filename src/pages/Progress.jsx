@@ -29,13 +29,13 @@ const Progress = () => {
         const token = await auth.currentUser.getIdToken();
 
         // Завантажуємо історію ваги
-        const weightRes = await axios.get("http://localhost:5000/api/weight", {
+        const weightRes = await axios.get("https://nutriwave-backend.onrender.com/api/weight", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setWeightHistory(weightRes.data.sort((a, b) => a.date.localeCompare(b.date)));
 
         // Завантажуємо профіль для цільової ваги
-        const profileRes = await axios.get("http://localhost:5000/api/users/me", {
+        const profileRes = await axios.get("hhttps://nutriwave-backend.onrender.com/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(profileRes.data);
@@ -56,7 +56,7 @@ const Progress = () => {
     try {
       const token = await auth.currentUser.getIdToken();
       await axios.post(
-        "http://localhost:5000/api/weight",
+        "https://nutriwave-backend.onrender.com/api/weight",
         { weight: parseFloat(currentWeight) },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -65,7 +65,7 @@ const ProgramDetail = () => {
     try {
       const token = await auth.currentUser.getIdToken();
       await axios.post(
-        "http://localhost:5000/api/users/me",
+        "https://nutriwave-backend.onrender.com/api/users/me",
         { selectedProgram: program.title },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -45,7 +45,7 @@ const Diary = () => {
 
       try {
         const token = await auth.currentUser.getIdToken();
-        const res = await axios.get(`http://localhost:5000/api/diary?date=${selectedDate}`, {
+        const res = await axios.get(`https://nutriwave-backend.onrender.com/api/diary?date=${selectedDate}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDiary(res.data || {
@@ -93,7 +93,7 @@ const Diary = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.post("http://localhost:5000/api/diary/meal", data, {
+      await axios.post("https://nutriwave-backend.onrender.com/api/diary/meal", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Їжу додано!");
@@ -109,7 +109,7 @@ const Diary = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.delete("http://localhost:5000/api/diary/meal", {
+      await axios.delete("https://nutriwave-backend.onrender.com/api/diary/meal", {
         headers: { Authorization: `Bearer ${token}` },
         data: { mealType, index, date: selectedDate },
       });
@@ -152,7 +152,7 @@ const Diary = () => {
         />
 <button
     onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
-    className="btn btn-primary" // тепер зелена з білим текстом
+    className="btn btn-primary" 
     style={{ padding: "0.75rem 1.5rem" }}
   >
     Сьогодні

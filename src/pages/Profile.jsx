@@ -53,7 +53,7 @@ const Profile = () => {
 
       try {
         const token = await auth.currentUser.getIdToken();
-        const res = await axios.get("http://localhost:5000/api/users/me", {
+        const res = await axios.get("https://nutriwave-backend.onrender.com/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(res.data);
@@ -84,7 +84,7 @@ const Profile = () => {
     try {
       const token = await auth.currentUser.getIdToken();
       await axios.post(
-        "http://localhost:5000/api/users/me",
+        "https://nutriwave-backend.onrender.com/api/users/me",
         {
           name: form.name,
           age: parseInt(form.age),
