@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -13,7 +13,7 @@ const Dashboard = () => {
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
   const [profile, setProfile] = useState(null);
-  const [recommendedCalories, setRecommendedCalories] = useState(1465); // з твого скріншоту
+  const [recommendedCalories, setRecommendedCalories] = useState(1465);
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
@@ -40,6 +40,33 @@ const Dashboard = () => {
     return "#ff8a80";
   };
 
+  // Формула Міффліна-Сан Жеора
+  const calculateDailyCalories = (p) => {
+    if (!p || !p.age || !p.height || !p.currentWeight || !p.gender) return 1465;
+
+    let bmr = p.gender === "male"
+      ? 10 * p.currentWeight + 6.25 * p.height - 5 * p.age + 5
+      : 10 * p.currentWeight + 6.25 * p.height - 5 * p.age - 161;
+
+    const multipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      very_active: 1.9,
+    };
+
+    const tdee = bmr * (multipliers[p.activityLevel] || 1.2);
+
+    const adjustments = {
+      lose: -500,
+      maintain: 0,
+      gain: 500,
+    };
+
+    return Math.round(tdee + adjustments[p.goal]);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!auth.currentUser) return;
@@ -47,16 +74,14 @@ const Dashboard = () => {
       setLoading(true);
 
       try {
-        // Завантажуємо щоденник
         const date = new Date().toISOString().split("T")[0];
         const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-        const docSnap = await getDoc(diaryRef);
+        const diarySnap = await getDoc(diaryRef);
 
-        if (docSnap.exists()) {
-          setDiary(docSnap.data());
+        if (diarySnap.exists()) {
+          setDiary(diarySnap.data());
         }
 
-        // Завантажуємо профіль для розрахунку калорій
         const profileRef = doc(db, "users", auth.currentUser.uid);
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
@@ -65,7 +90,7 @@ const Dashboard = () => {
           setRecommendedCalories(calculateDailyCalories(data));
         }
       } catch (err) {
-        console.error("Помилка завантаження даних:", err);
+        console.error("Помилка завантаження:", err);
       } finally {
         setLoading(false);
       }
@@ -286,7 +311,7 @@ const Dashboard = () => {
             <form onSubmit={handleAddFood}>
               <input
                 type="text"
-                placeholder="Назва їжі (наприклад, Вівсянка з ягодами)"
+                placeholder="Назва їжі"
                 value={foodForm.foodName}
                 onChange={(e) => setFoodForm({ ...foodForm, foodName: e.target.value })}
                 required
