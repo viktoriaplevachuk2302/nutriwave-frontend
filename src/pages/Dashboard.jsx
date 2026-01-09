@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -74,7 +74,7 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time слухач змін
+    // Real-time оновлення
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
