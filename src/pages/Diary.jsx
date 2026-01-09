@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { useNavigate } from "react-router-dom";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 
 const Diary = () => {
   const [diary, setDiary] = useState({
@@ -61,13 +60,6 @@ const Diary = () => {
         }
       } catch (err) {
         console.error("Помилка завантаження щоденника:", err);
-        setDiary({
-          totalCalories: 0,
-          totalProtein: 0,
-          totalCarbs: 0,
-          totalFat: 0,
-          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        });
       } finally {
         setLoading(false);
       }
@@ -97,33 +89,36 @@ const Diary = () => {
       protein: parseFloat(foodForm.protein) || 0,
       carbs: parseFloat(foodForm.carbs) || 0,
       fat: parseFloat(foodForm.fat) || 0,
+      addedAt: new Date().toISOString(),
     };
 
     try {
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
-      const docSnap = await getDoc(diaryRef);
-      let diaryData = docSnap.exists() ? docSnap.data() : {
-        totalCalories: 0,
-        totalProtein: 0,
-        totalCarbs: 0,
-        totalFat: 0,
-        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-      };
+      await updateDoc(diaryRef, {
+        [`meals.${selectedMeal}`]: arrayUnion(newFood),
+        totalCalories: increment(newFood.calories),
+        totalProtein: increment(newFood.protein),
+        totalCarbs: increment(newFood.carbs),
+        totalFat: increment(newFood.fat),
+      }, { merge: true });
 
-      // Додаємо нову їжу
-      diaryData.meals[selectedMeal] = [...(diaryData.meals[selectedMeal] || []), newFood];
+      // Оновлюємо локальний стан
+      setDiary(prev => ({
+        ...prev,
+        totalCalories: prev.totalCalories + newFood.calories,
+        totalProtein: prev.totalProtein + newFood.protein,
+        totalCarbs: prev.totalCarbs + newFood.carbs,
+        totalFat: prev.totalFat + newFood.fat,
+        meals: {
+          ...prev.meals,
+          [selectedMeal]: [...(prev.meals[selectedMeal] || []), newFood],
+        },
+      }));
 
-      // Оновлюємо підсумки
-      diaryData.totalCalories += newFood.calories;
-      diaryData.totalProtein += newFood.protein;
-      diaryData.totalCarbs += newFood.carbs;
-      diaryData.totalFat += newFood.fat;
-
-      await setDoc(diaryRef, diaryData, { merge: true });
-      setDiary(diaryData);
       alert("Їжу додано!");
       setShowModal(false);
     } catch (err) {
+      console.error("Помилка додавання їжі:", err);
       alert("Помилка додавання їжі");
     }
   };
@@ -139,18 +134,32 @@ const Diary = () => {
       const diaryData = docSnap.data();
       const food = diaryData.meals[mealType][index];
 
-      diaryData.meals[mealType].splice(index, 1);
+      const updatedMeals = diaryData.meals[mealType].filter((_, i) => i !== index);
 
-      // Оновлюємо підсумки
-      diaryData.totalCalories -= food.calories;
-      diaryData.totalProtein -= food.protein;
-      diaryData.totalCarbs -= food.carbs;
-      diaryData.totalFat -= food.fat;
+      await updateDoc(diaryRef, {
+        [`meals.${mealType}`]: updatedMeals,
+        totalCalories: increment(-food.calories),
+        totalProtein: increment(-(food.protein || 0)),
+        totalCarbs: increment(-(food.carbs || 0)),
+        totalFat: increment(-(food.fat || 0)),
+      });
 
-      await setDoc(diaryRef, diaryData, { merge: true });
-      setDiary(diaryData);
+      // Оновлюємо локальний стан
+      setDiary(prev => ({
+        ...prev,
+        totalCalories: prev.totalCalories - food.calories,
+        totalProtein: prev.totalProtein - (food.protein || 0),
+        totalCarbs: prev.totalCarbs - (food.carbs || 0),
+        totalFat: prev.totalFat - (food.fat || 0),
+        meals: {
+          ...prev.meals,
+          [mealType]: prev.meals[mealType].filter((_, i) => i !== index),
+        },
+      }));
+
       alert("Страву видалено!");
     } catch (err) {
+      console.error("Помилка видалення:", err);
       alert("Помилка видалення");
     }
   };
@@ -160,23 +169,19 @@ const Diary = () => {
 
     try {
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
-      const docSnap = await getDoc(diaryRef);
-      let diaryData = docSnap.exists() ? docSnap.data() : {
-        totalCalories: 0,
-        totalProtein: 0,
-        totalCarbs: 0,
-        totalFat: 0,
-        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        waterGlasses: 0,
-        waterLiters: 0,
-      };
+      await updateDoc(diaryRef, {
+        waterGlasses: increment(1),
+        waterLiters: increment(0.25),
+      }, { merge: true });
 
-      diaryData.waterGlasses = (diaryData.waterGlasses || 0) + 1;
-      diaryData.waterLiters = (diaryData.waterLiters || 0) + 0.25;
-
-      await setDoc(diaryRef, diaryData, { merge: true });
-      setDiary(diaryData);
+      // Оновлюємо локальний стан
+      setDiary(prev => ({
+        ...prev,
+        waterGlasses: (prev.waterGlasses || 0) + 1,
+        waterLiters: (prev.waterLiters || 0) + 0.25,
+      }));
     } catch (err) {
+      console.error("Помилка додавання води:", err);
       alert("Помилка додавання води");
     }
   };
