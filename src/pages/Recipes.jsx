@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Recipes = () => {
   const [filteredRecipes, setFilteredRecipes] = useState([]);
@@ -822,6 +822,7 @@ const Recipes = () => {
         });
       }
 
+      // Додаємо рецепт
       await setDoc(diaryRef, {
         [`meals.${mealType}`]: arrayUnion(data),
         totalCalories: increment(data.calories),
