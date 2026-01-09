@@ -60,6 +60,7 @@ const logout = async () => {
   }
 };
 
+// Експортуємо ВСІ функції Firebase, які потрібні
 export { 
   auth, 
   db, 
