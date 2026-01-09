@@ -74,7 +74,7 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time слухач змін (onSnapshot) — оновлює сторінку автоматично
+    // Real-time слухач змін
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -88,9 +88,6 @@ const Dashboard = () => {
 
       if (snap.exists()) {
         diaryData = snap.data();
-      } else {
-        // Якщо документа немає, створюємо порожній
-        setDoc(diaryRef, diaryData);
       }
 
       setDiary(diaryData);
@@ -144,7 +141,7 @@ const Dashboard = () => {
         totalFat: increment(newFood.fat),
       }, { merge: true });
 
-      alert("Їжу додано!");
+      alert(" Їжу додано!");
       setShowModal(false);
     } catch (err) {
       console.error("Помилка додавання їжі:", err);
@@ -219,12 +216,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Права частина — картки прийомів їжі з повним списком страв */}
+        {/* Права частина — картки прийомів їжі */}
         <div>
           {Object.keys(mealData).map((meal) => {
             const { title, icon, range, max } = mealData[meal];
-            const foods = diary.meals?.[meal] || [];
-            const mealCalories = foods.reduce((sum, item) => sum + (item.calories || 0), 0);
+            const mealCalories = diary.meals?.[meal]?.reduce((sum, item) => sum + (item.calories || 0), 0) || 0;
             const cardColor = getMealCardColor(mealCalories, max);
 
             return (
@@ -232,8 +228,9 @@ const Dashboard = () => {
                 key={meal}
                 className="meal-card"
                 style={{ background: cardColor, marginBottom: "1rem", cursor: "pointer" }}
+                onClick={() => openMealModal(meal)}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <h3 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>
                       {icon} {title}
@@ -243,53 +240,8 @@ const Dashboard = () => {
                     </p>
                     <p style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{mealCalories} ккал</p>
                   </div>
-                  <button
-                    onClick={() => openMealModal(meal)}
-                    style={{
-                      background: "#5B7133",
-                      color: "white",
-                      width: "50px",
-                      height: "50px",
-                      borderRadius: "50%",
-                      fontSize: "2rem",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    +
-                  </button>
+                  <div style={{ fontSize: "3rem", color: "#5B7133" }}>+</div>
                 </div>
-
-                {/* Список доданих страв у слоті */}
-                {foods.length > 0 ? (
-                  <div style={{ marginTop: "1rem" }}>
-                    {foods.map((food, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          background: "rgba(255,255,255,0.8)",
-                          padding: "0.75rem",
-                          borderRadius: "8px",
-                          marginBottom: "0.5rem",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div>
-                          <strong>{food.foodName}</strong>
-                          <div style={{ fontSize: "0.9rem", color: "#555" }}>
-                            {food.calories} ккал · Б: {food.protein}г · В: {food.carbs}г · Ж: {food.fat}г
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ textAlign: "center", color: "#666", fontStyle: "italic" }}>
-                    Немає записів
-                  </p>
-                )}
               </div>
             );
           })}
@@ -356,7 +308,7 @@ const Dashboard = () => {
                 value={foodForm.foodName}
                 onChange={(e) => setFoodForm({ ...foodForm, foodName: e.target.value })}
                 required
-                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+                style={{ flex: 1 }}
               />
               <input
                 type="number"
@@ -364,7 +316,7 @@ const Dashboard = () => {
                 value={foodForm.calories}
                 onChange={(e) => setFoodForm({ ...foodForm, calories: e.target.value })}
                 required
-                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+                style={{ flex: 1 }}
               />
               <input
                 type="number"
@@ -373,7 +325,7 @@ const Dashboard = () => {
                 value={foodForm.protein}
                 onChange={(e) => setFoodForm({ ...foodForm, protein: e.target.value })}
                 required
-                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+                style={{ flex: 1 }}
               />
               <input
                 type="number"
@@ -382,7 +334,7 @@ const Dashboard = () => {
                 value={foodForm.carbs}
                 onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
                 required
-                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+                style={{ flex: 1 }}
               />
               <input
                 type="number"
@@ -391,7 +343,7 @@ const Dashboard = () => {
                 value={foodForm.fat}
                 onChange={(e) => setFoodForm({ ...foodForm, fat: e.target.value })}
                 required
-                style={{ width: "100%", padding: "0.75rem", marginBottom: "2rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+                style={{ flex: 1 }}
               />
 
               <div style={{ display: "flex", gap: "1rem" }}>
