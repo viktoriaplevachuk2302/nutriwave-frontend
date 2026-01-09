@@ -1,16 +1,11 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { auth, db } from "../services/firebase";
-import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
+import { useState } from "react";
 
 const Recipes = () => {
-  const [recipes, setRecipes] = useState([]);
   const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState("");
-  const [loading, setLoading] = useState(true);
 
   const categories = {
     all: "Всі",
@@ -20,26 +15,35 @@ const Recipes = () => {
     snack: "Перекус",
   };
 
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        const recipesRef = collection(db, "recipes");
-        const querySnapshot = await getDocs(recipesRef);
-        const recipesData = [];
-        querySnapshot.forEach((doc) => {
-          recipesData.push({ id: doc.id, ...doc.data() });
-        });
-        setRecipes(recipesData);
-        setFilteredRecipes(recipesData);
-      } catch (err) {
-        console.error("Помилка завантаження рецептів:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecipes();
-  }, []);
+  const recipes = [
+    {
+      id: "1",
+      title: "Авокадо тост з яйцем",
+      category: "breakfast",
+      calories: 350,
+      protein: 15,
+      carbs: 30,
+      fat: 20,
+      shortDescription: "Корисний сніданок з авокадо і яйцем.",
+      image: "https://via.placeholder.com/320x220?text=Авокадо+тост",
+      ingredients: ["Авокадо - 1 шт", "Хліб - 2 скибки", "Яйця - 2 шт", "Сіль, перець"],
+      instructions: "Розім'яти авокадо, намазати на тост, посмажити яйця, покласти зверху.",
+    },
+    {
+      id: "2",
+      title: "Курячий салат",
+      category: "lunch",
+      calories: 450,
+      protein: 35,
+      carbs: 20,
+      fat: 25,
+      shortDescription: "Ситний салат з куркою і овочами.",
+      image: "https://via.placeholder.com/320x220?text=Курячий+салат",
+      ingredients: ["Курка - 200г", "Салат - 100г", "Помідори - 2 шт", "Огірок - 1 шт"],
+      instructions: "Відварити курку, нарізати овочі, змішати з куркою.",
+    },
+    // Додай більше рецептів за аналогією
+  ];
 
   useEffect(() => {
     if (selectedCategory === "all") {
@@ -47,43 +51,16 @@ const Recipes = () => {
     } else {
       setFilteredRecipes(recipes.filter((r) => r.category === selectedCategory));
     }
-  }, [selectedCategory, recipes]);
+  }, [selectedCategory]);
 
-  const handleAddToDiary = async (mealType) => {
-    if (!selectedRecipe || !auth.currentUser) return;
+  const handleAddToDiary = (mealType) => {
+    if (!selectedRecipe) return;
 
-    const data = {
-      mealType,
-      foodName: selectedRecipe.title,
-      calories: selectedRecipe.calories || 0,
-      protein: selectedRecipe.protein || 0,
-      carbs: selectedRecipe.carbs || 0,
-      fat: selectedRecipe.fat || 0,
-      date: new Date().toISOString().split("T")[0],
-    };
-
-    try {
-      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", data.date);
-      await updateDoc(diaryRef, {
-        [`meals.${mealType}`]: arrayUnion(data),
-        totalCalories: increment(data.calories),
-        totalProtein: increment(data.protein),
-        totalCarbs: increment(data.carbs),
-        totalFat: increment(data.fat),
-      }, { merge: true });
-
-      alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
-      setShowAddModal(false);
-      setSelectedRecipe(null);
-    } catch (err) {
-      console.error("Помилка додавання рецепту:", err);
-      alert("Помилка додавання рецепту в щоденник");
-    }
+    alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
+    setShowAddModal(false);
+    setSelectedRecipe(null);
+    // Тут можеш додати логіку збереження в щоденник, якщо потрібно
   };
-
-  if (loading) {
-    return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження рецептів...</div>;
-  }
 
   return (
     <div className="container">
