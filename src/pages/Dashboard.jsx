@@ -74,8 +74,8 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time оновлення
-    const unsubscribe = onSnapshot(diaryRef, (snap) => {
+    // Real-time оновлення (onSnapshot)
+    const unsubscribe = onSnapshot(diaryRef, async (snap) => {
       let diaryData = {
         totalCalories: 0,
         totalProtein: 0,
@@ -88,6 +88,9 @@ const Dashboard = () => {
 
       if (snap.exists()) {
         diaryData = snap.data();
+      } else {
+        // Якщо документа немає — створюємо порожній
+        await setDoc(diaryRef, diaryData);
       }
 
       setDiary(diaryData);

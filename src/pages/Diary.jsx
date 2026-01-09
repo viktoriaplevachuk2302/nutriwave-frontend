@@ -52,7 +52,7 @@ const Diary = () => {
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
 
     // Real-time слухач змін (onSnapshot)
-    const unsubscribe = onSnapshot(diaryRef, (snap) => {
+    const unsubscribe = onSnapshot(diaryRef, async (snap) => {
       let diaryData = {
         totalCalories: 0,
         totalProtein: 0,
@@ -66,8 +66,8 @@ const Diary = () => {
       if (snap.exists()) {
         diaryData = snap.data();
       } else {
-        // Створюємо порожній документ
-        setDoc(diaryRef, diaryData);
+        // Якщо документа немає — створюємо порожній
+        await setDoc(diaryRef, diaryData);
       }
 
       setDiary(diaryData);
@@ -99,6 +99,21 @@ const Diary = () => {
     try {
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
 
+      // Перевіряємо, чи існує документ (щоб уникнути помилок)
+      const docSnap = await getDoc(diaryRef);
+      if (!docSnap.exists()) {
+        await setDoc(diaryRef, {
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          waterGlasses: 0,
+          waterLiters: 0,
+          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        });
+      }
+
+      // Додаємо їжу
       await setDoc(diaryRef, {
         [`meals.${selectedMeal}`]: arrayUnion(newFood),
         totalCalories: increment(newFood.calories),
