@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -13,7 +13,7 @@ const Dashboard = () => {
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
   const [profile, setProfile] = useState(null);
-  const [recommendedCalories, setRecommendedCalories] = useState(1465); // з твого скріншоту
+  const [recommendedCalories, setRecommendedCalories] = useState(1465);
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
@@ -40,7 +40,7 @@ const Dashboard = () => {
     return "#ff8a80";
   };
 
-  // Формула Міффліна-Сан Жеора (та сама, що в профілі)
+  // Формула Міффліна-Сан Жеора
   const calculateDailyCalories = (p) => {
     if (!p || !p.age || !p.height || !p.currentWeight || !p.gender) return 1465;
 
@@ -90,6 +90,9 @@ const Dashboard = () => {
 
         if (diarySnap.exists()) {
           diaryData = diarySnap.data();
+        } else {
+          // Створюємо порожній документ, якщо його немає
+          await setDoc(diaryRef, diaryData);
         }
 
         setDiary(diaryData);
@@ -124,7 +127,7 @@ const Dashboard = () => {
 
     const newFood = {
       foodName: foodForm.foodName,
-      calories: parseInt(foodForm.calories),
+      calories: parseInt(foodForm.calories) || 0,
       protein: parseFloat(foodForm.protein) || 0,
       carbs: parseFloat(foodForm.carbs) || 0,
       fat: parseFloat(foodForm.fat) || 0,
