@@ -45,7 +45,6 @@ function App() {
     <Router>
       {user && <Navbar />}
       <Routes>
-        {/* Якщо не залогінений — тільки логін */}
         {!user && (
           <>
             <Route path="/login" element={<Login />} />
@@ -53,7 +52,6 @@ function App() {
           </>
         )}
 
-        {/* Якщо залогінений — повна навігація */}
         {user && (
           <>
             <Route path="/" element={<Dashboard />} />

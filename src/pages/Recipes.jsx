@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Recipes = () => {
   const [filteredRecipes, setFilteredRecipes] = useState([]);
@@ -783,13 +783,11 @@ const Recipes = () => {
   ];
 
   useEffect(() => {
-    // Ініціалізація рецептів при першому завантаженні
     if (selectedCategory === "all") {
       setFilteredRecipes(recipes);
     } else {
       setFilteredRecipes(recipes.filter((r) => r.category === selectedCategory));
     }
-    setLoading(false);
   }, [selectedCategory]);
 
   const handleAddToDiary = async (mealType) => {
@@ -825,10 +823,6 @@ const Recipes = () => {
       alert("Помилка додавання рецепту в щоденник");
     }
   };
-
-  if (loading) {
-    return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження рецептів...</div>;
-  }
 
   return (
     <div className="container">

@@ -1,326 +1,347 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 
-const Profile = () => {
+const Dashboard = () => {
+  const [diary, setDiary] = useState({
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+    waterGlasses: 0,
+    waterLiters: 0,
+    meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+  });
   const [profile, setProfile] = useState(null);
+  const [recommendedCalories, setRecommendedCalories] = useState(1465); // з твого скріншоту
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    age: "",
-    height: "",
-    weight: "",
-    gender: "female",
-    activityLevel: "sedentary",
-    goal: "lose",
-    selectedProgram: "", // Підтримка вибраної програми
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState("");
+  const [foodForm, setFoodForm] = useState({
+    foodName: "",
+    calories: "",
+    protein: "",
+    carbs: "",
+    fat: "",
   });
 
-  // Формула Міффліна-Сан Жеора
-  const calculateBMR = (weight, height, age, gender) => {
-    if (gender === "male") {
-      return 10 * weight + 6.25 * height - 5 * age + 5;
-    } else {
-      return 10 * weight + 6.25 * height - 5 * age - 161;
-    }
+  const mealData = {
+    breakfast: { title: "Сніданок", icon: "🥞", range: "366-513 ккал", max: 513 },
+    lunch: { title: "Обід", icon: "🍲", range: "439-586 ккал", max: 586 },
+    dinner: { title: "Вечеря", icon: "🥗", range: "571-747 ккал", max: 747 },
+    snack: { title: "Перекус", icon: "🍎", range: "0-88 ккал", max: 88 },
   };
 
-  const activityMultiplier = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    very_active: 1.9,
-  };
-
-  const goalAdjustment = {
-    lose: -500,
-    maintain: 0,
-    gain: 500,
-  };
-
-  const calculateDailyCalories = () => {
-    if (!profile || !profile.age) return 0;
-    const bmr = calculateBMR(profile.currentWeight, profile.height, profile.age, profile.gender);
-    const tdee = bmr * activityMultiplier[profile.activityLevel];
-    const adjusted = tdee + goalAdjustment[profile.goal];
-    return Math.round(adjusted);
+  const getMealCardColor = (calories, max) => {
+    if (calories <= max) return "#C8D094";
+    if (calories <= max * 1.1) return "#f0e68c";
+    if (calories <= max * 1.3) return "#ffcc80";
+    return "#ff8a80";
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       if (!auth.currentUser) return;
 
+      setLoading(true);
+
       try {
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        const docSnap = await getDoc(userRef);
+        // Завантажуємо щоденник
+        const date = new Date().toISOString().split("T")[0];
+        const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+        const docSnap = await getDoc(diaryRef);
 
         if (docSnap.exists()) {
-          const data = docSnap.data();
+          setDiary(docSnap.data());
+        }
+
+        // Завантажуємо профіль для розрахунку калорій
+        const profileRef = doc(db, "users", auth.currentUser.uid);
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+          const data = profileSnap.data();
           setProfile(data);
-          setForm({
-            name: data.name || "",
-            age: data.age || "",
-            height: data.height || "",
-            weight: data.currentWeight || "",
-            gender: data.gender || "female",
-            activityLevel: data.activityLevel || "sedentary",
-            goal: data.goal || "lose",
-            selectedProgram: data.selectedProgram || "",
-          });
+          setRecommendedCalories(calculateDailyCalories(data));
         }
       } catch (err) {
-        console.log("Профіль не знайдено — потрібно заповнити");
+        console.error("Помилка завантаження даних:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const consumed = diary.totalCalories || 0;
+
+  const openMealModal = (mealType) => {
+    setSelectedMeal(mealType);
+    setShowModal(true);
+    setFoodForm({ foodName: "", calories: "", protein: "", carbs: "", fat: "" });
+  };
+
+  const handleAddFood = async (e) => {
     e.preventDefault();
 
-    try {
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      const data = {
-        name: form.name,
-        age: form.age ? parseInt(form.age, 10) : 0,
-        currentWeight: form.weight ? parseFloat(form.weight) : 0,
-        height: form.height ? parseInt(form.height, 10) : 0,
-        gender: form.gender,
-        goal: form.goal,
-        activityLevel: form.activityLevel,
-        selectedProgram: form.selectedProgram,
-        updatedAt: new Date(),
-      };
+    const newFood = {
+      foodName: foodForm.foodName,
+      calories: parseInt(foodForm.calories),
+      protein: parseFloat(foodForm.protein) || 0,
+      carbs: parseFloat(foodForm.carbs) || 0,
+      fat: parseFloat(foodForm.fat) || 0,
+      addedAt: new Date().toISOString(),
+    };
 
-      await setDoc(userRef, data, { merge: true });
-      alert("Профіль збережено!");
-      setProfile(data); // Оновлюємо локально
-      setIsEditing(false);
+    try {
+      const date = new Date().toISOString().split("T")[0];
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+      await updateDoc(diaryRef, {
+        [`meals.${selectedMeal}`]: arrayUnion(newFood),
+        totalCalories: increment(newFood.calories),
+        totalProtein: increment(newFood.protein),
+        totalCarbs: increment(newFood.carbs),
+        totalFat: increment(newFood.fat),
+      }, { merge: true });
+
+      // Оновлюємо локальний стан
+      setDiary(prev => ({
+        ...prev,
+        totalCalories: prev.totalCalories + newFood.calories,
+        totalProtein: prev.totalProtein + newFood.protein,
+        totalCarbs: prev.totalCarbs + newFood.carbs,
+        totalFat: prev.totalFat + newFood.fat,
+        meals: {
+          ...prev.meals,
+          [selectedMeal]: [...(prev.meals[selectedMeal] || []), newFood],
+        },
+      }));
+
+      alert("Їжу додано!");
+      setShowModal(false);
     } catch (err) {
-      console.error("Помилка збереження:", err);
-      alert("Помилка збереження профілю");
+      console.error("Помилка додавання їжі:", err);
+      alert("Помилка додавання їжі");
+    }
+  };
+
+  const addWater = async () => {
+    if (diary.waterGlasses >= 8) return;
+
+    try {
+      const date = new Date().toISOString().split("T")[0];
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+      await updateDoc(diaryRef, {
+        waterGlasses: increment(1),
+        waterLiters: increment(0.25),
+      }, { merge: true });
+
+      setDiary(prev => ({
+        ...prev,
+        waterGlasses: (prev.waterGlasses || 0) + 1,
+        waterLiters: (prev.waterLiters || 0) + 0.25,
+      }));
+    } catch (err) {
+      console.error("Помилка додавання води:", err);
+      alert("Помилка додавання води");
     }
   };
 
   if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#f8f8f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        Завантаження...
-      </div>
-    );
+    return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження...</div>;
   }
 
-  const userPhoto = auth.currentUser?.photoURL || "https://via.placeholder.com/140?text=Фото";
+  return (
+    <div className="container">
+      <h1 style={{ textAlign: "center", color: "#5B7133", fontSize: "2.5rem", margin: "2rem 0" }}>
+        Сьогодні
+      </h1>
 
-  // Перегляд або редагування профілю
-  if (!profile || !profile.age || isEditing) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#f8f8f5" }}>
-        <div className="container" style={{ display: "flex", justifyContent: "center", paddingTop: "2rem" }}>
-          <div className="card" style={{ width: "550px", maxWidth: "95%" }}>
-            <h2 style={{ textAlign: "center", color: "#5B7133", marginBottom: "0.5rem" }}>
-              {isEditing ? "Редагувати профіль" : "Заповніть профіль"}
-            </h2>
-            <p style={{ textAlign: "center", color: "#666", marginBottom: "2rem" }}>
-              Ці дані потрібні для розрахунку калорій
-            </p>
-
-            <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-              <img
-                src={userPhoto}
-                alt="Фото профілю"
-                style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover", border: "4px solid #C8D094" }}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", alignItems: "start" }}>
+        {/* Ліва частина — калорії та макроси */}
+        <div className="card" style={{ textAlign: "center" }}>
+          <div className="progress-circle">
+            <svg width="280" height="280" viewBox="0 0 280 280">
+              <circle cx="140" cy="140" r="120" fill="none" stroke="#e8f0e0" strokeWidth="25" />
+              <circle
+                cx="140"
+                cy="140"
+                r="120"
+                fill="none"
+                stroke="#5B7133"
+                strokeWidth="25"
+                strokeDasharray="754"
+                strokeDashoffset={754 - (754 * consumed / recommendedCalories)}
+                className="progress-fill"
               />
+            </svg>
+            <div className="progress-text">
+              <strong>{consumed}</strong>
+              <span>з {recommendedCalories} ккал</span>
             </div>
+          </div>
 
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                  Ім'я (необов'язково)
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                />
-              </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginTop: "2rem" }}>
+            <div className="macro-item">
+              <strong>Вуглеводи</strong>
+              <div>{diary.totalCarbs || 0}г</div>
+            </div>
+            <div className="macro-item">
+              <strong>Білки</strong>
+              <div>{diary.totalProtein || 0}г</div>
+            </div>
+            <div className="macro-item">
+              <strong>Жири</strong>
+              <div>{diary.totalFat || 0}г</div>
+            </div>
+          </div>
+        </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                    Вік
-                  </label>
-                  <input
-                    type="number"
-                    value={form.age}
-                    onChange={(e) => setForm({ ...form, age: e.target.value })}
-                    required
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                  />
+        {/* Права частина — картки прийомів їжі */}
+        <div>
+          {Object.keys(mealData).map((meal) => {
+            const { title, icon, range, max } = mealData[meal];
+            const mealCalories = diary.meals[meal]?.reduce((sum, item) => sum + item.calories, 0) || 0;
+            const cardColor = getMealCardColor(mealCalories, max);
+
+            return (
+              <div
+                key={meal}
+                className="meal-card"
+                style={{ background: cardColor, marginBottom: "1rem", cursor: "pointer" }}
+                onClick={() => openMealModal(meal)}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <h3 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>
+                      {icon} {title}
+                    </h3>
+                    <p style={{ color: "#5B7133", marginBottom: "0.5rem" }}>
+                      Рекомендовано: {range}
+                    </p>
+                    <p style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{mealCalories} ккал</p>
+                  </div>
+                  <div style={{ fontSize: "3rem", color: "#5B7133" }}>+</div>
                 </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                    Зріст (см)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.height}
-                    onChange={(e) => setForm({ ...form, height: e.target.value })}
-                    required
-                    style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                  />
-                </div>
               </div>
+            );
+          })}
+        </div>
+      </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                  Вага (кг)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={form.weight}
-                  onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                  required
-                  style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                />
+      {/* Блок води */}
+      <div className="card" style={{ marginTop: "3rem" }}>
+        <h3 style={{ textAlign: "center", color: "#5B7133", marginBottom: "1.5rem" }}>
+          Вода сьогодні
+        </h3>
+        <p style={{ textAlign: "center", fontSize: "1.2rem", marginBottom: "1.5rem" }}>
+          Випито: {(diary.waterLiters || 0).toFixed(1)} л з 2 л
+        </p>
+        <div style={{ display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
+          {Array.from({ length: 8 }, (_, i) => (
+            <div
+              key={i}
+              onClick={() => diary.waterGlasses <= i && addWater()}
+              style={{
+                width: "60px",
+                height: "80px",
+                background: diary.waterGlasses > i ? "#5B7133" : "#e8f0e0",
+                borderRadius: "10px 10px 30px 30px",
+                cursor: diary.waterGlasses <= i ? "pointer" : "default",
+                transition: "all 0.3s",
+                display: "flex",
+                alignItems: "flex-end",
+                justifyContent: "center",
+                paddingBottom: "10px",
+                color: diary.waterGlasses > i ? "white" : "#5B7133",
+                fontWeight: "bold",
+                fontSize: "1.2rem",
+              }}
+            >
+              {i + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Модалка додавання їжі */}
+      {showModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div className="card" style={{ width: "500px", maxWidth: "95%" }}>
+            <h3 style={{ textAlign: "center", color: "#5B7133", marginBottom: "1.5rem" }}>
+              Додати їжу до {mealData[selectedMeal]?.title}
+            </h3>
+            <form onSubmit={handleAddFood}>
+              <input
+                type="text"
+                placeholder="Назва їжі (наприклад, Вівсянка з ягодами)"
+                value={foodForm.foodName}
+                onChange={(e) => setFoodForm({ ...foodForm, foodName: e.target.value })}
+                required
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+              />
+              <input
+                type="number"
+                placeholder="Калорії"
+                value={foodForm.calories}
+                onChange={(e) => setFoodForm({ ...foodForm, calories: e.target.value })}
+                required
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+              />
+              <input
+                type="number"
+                step="0.1"
+                placeholder="Білки (г)"
+                value={foodForm.protein}
+                onChange={(e) => setFoodForm({ ...foodForm, protein: e.target.value })}
+                required
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+              />
+              <input
+                type="number"
+                step="0.1"
+                placeholder="Вуглеводи (г)"
+                value={foodForm.carbs}
+                onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
+                required
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+              />
+              <input
+                type="number"
+                step="0.1"
+                placeholder="Жири (г)"
+                value={foodForm.fat}
+                onChange={(e) => setFoodForm({ ...foodForm, fat: e.target.value })}
+                required
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "2rem", borderRadius: "12px", border: "1px solid #C8D094" }}
+              />
+
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Додати
+                </button>
+                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline" style={{ flex: 1 }}>
+                  Скасувати
+                </button>
               </div>
-
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                  Стать
-                </label>
-                <select
-                  value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                  required
-                  style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                >
-                  <option value="female">Жіноча</option>
-                  <option value="male">Чоловіча</option>
-                </select>
-              </div>
-
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                  Рівень активності
-                </label>
-                <select
-                  value={form.activityLevel}
-                  onChange={(e) => setForm({ ...form, activityLevel: e.target.value })}
-                  required
-                  style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                >
-                  <option value="sedentary">Сидячий</option>
-                  <option value="light">Легка</option>
-                  <option value="moderate">Помірна</option>
-                  <option value="active">Висока</option>
-                  <option value="very_active">Дуже висока</option>
-                </select>
-              </div>
-
-              <div style={{ marginBottom: "2rem" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", color: "#5B7133", fontWeight: "600" }}>
-                  Ціль
-                </label>
-                <select
-                  value={form.goal}
-                  onChange={(e) => setForm({ ...form, goal: e.target.value })}
-                  required
-                  style={{ width: "100%", padding: "0.75rem", borderRadius: "12px", border: "1px solid #C8D094" }}
-                >
-                  <option value="lose">Схуднути</option>
-                  <option value="maintain">Підтримувати вагу</option>
-                  <option value="gain">Набрати вагу</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn btn-primary" style={{ width: "100%", padding: "1rem", fontSize: "1.1rem" }}>
-                {isEditing ? "Зберегти зміни" : "Зберегти та продовжити"}
-              </button>
             </form>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // Перегляд профілю після заповнення
-  const dailyCalories = calculateDailyCalories();
-
-  // Словники для відображення тексту
-  const activityText = {
-    sedentary: "Сидячий",
-    light: "Легка",
-    moderate: "Помірна",
-    active: "Висока",
-    very_active: "Дуже висока",
-  };
-
-  const goalText = {
-    lose: "Схуднути",
-    maintain: "Підтримувати вагу",
-    gain: "Набрати вагу",
-  };
-
-  return (
-    <div style={{ minHeight: "100vh", background: "#f8f8f5" }}>
-      <div className="container">
-        <div className="card" style={{ textAlign: "center" }}>
-          <img
-            src={userPhoto}
-            alt="Фото профілю"
-            style={{ width: "140px", height: "140px", borderRadius: "50%", objectFit: "cover", border: "5px solid #C8D094", marginBottom: "1.5rem" }}
-          />
-
-          <h2 style={{ color: "#5B7133", marginBottom: "1rem" }}>
-            {profile.name || auth.currentUser?.displayName || "Користувач"}
-          </h2>
-
-          <div style={{ lineHeight: "2rem", fontSize: "1.1rem", marginBottom: "2rem" }}>
-            <p><strong>Вік:</strong> {profile.age} років</p>
-            <p><strong>Зріст:</strong> {profile.height} см</p>
-            <p><strong>Вага:</strong> {profile.currentWeight} кг</p>
-            <p><strong>Стать:</strong> {profile.gender === "female" ? "Жіноча" : "Чоловіча"}</p>
-            <p><strong>Активність:</strong> {activityText[profile.activityLevel] || profile.activityLevel}</p>
-            <p><strong>Ціль:</strong> {goalText[profile.goal] || profile.goal}</p>
-          </div>
-
-          <div className="card" style={{ background: "#C8D094", padding: "1.5rem", marginBottom: "2rem" }}>
-            <h3 style={{ color: "#5B7133", marginBottom: "0.5rem" }}>Рекомендовані калорії на день</h3>
-            <p style={{ fontSize: "2rem", fontWeight: "bold", color: "#5B7133" }}>{dailyCalories} ккал</p>
-            <p style={{ color: "#5B7133" }}>
-              Розраховано за формулою Міффліна-Сан Жеора з урахуванням вашої активності та цілі
-            </p>
-          </div>
-
-          {/* Відображення вибраної програми */}
-          {profile.selectedProgram && (
-            <div className="card" style={{ background: "#C8D094", textAlign: "center", marginBottom: "2rem" }}>
-              <p style={{ fontSize: "1.3rem", color: "#5B7133" }}>
-                Вибрана програма: <strong>{profile.selectedProgram}</strong>
-              </p>
-            </div>
-          )}
-
-          <button
-            className="btn btn-primary"
-            style={{ width: "100%", padding: "1rem" }}
-            onClick={() => setIsEditing(true)}
-          >
-            Редагувати профіль
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
 
-export default Profile;
+export default Dashboard;
