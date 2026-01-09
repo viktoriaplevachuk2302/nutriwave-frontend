@@ -795,7 +795,7 @@ const Recipes = () => {
 
     const date = new Date().toISOString().split("T")[0];
 
-  const data = {
+    const data = {
       mealType, // ← це ключовий рядок — тепер слоти знають, куди додати!
       foodName: selectedRecipe.title,
       calories: selectedRecipe.calories || 0,
@@ -805,7 +805,7 @@ const Recipes = () => {
       addedAt: new Date().toISOString(),
     };
 
-  try {
+    try {
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
       // Перевіряємо, чи існує документ
@@ -822,7 +822,7 @@ const Recipes = () => {
         });
       }
 
-  await setDoc(diaryRef, {
+      await setDoc(diaryRef, {
         [`meals.${mealType}`]: arrayUnion(data),
         totalCalories: increment(data.calories),
         totalProtein: increment(data.protein),
