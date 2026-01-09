@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { auth } from "./services/firebase";
-import axios from "axios";
+import { auth, db } from "./services/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -21,15 +21,24 @@ function App() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
+
       if (currentUser) {
         try {
-          const token = await currentUser.getIdToken();
-          const res = await axios.get("https://nutriwave-backend1.vercel.app/api/users/me", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          // Перевіряємо, чи профіль існує і заповнений (наприклад, є ім'я або вік)
-          const profileData = res.data;
-          setHasProfile(!!profileData && (profileData.age || profileData.name || profileData.height));
+          const userRef = doc(db, "users", currentUser.uid);
+          const docSnap = await getDoc(userRef);
+
+          if (docSnap.exists()) {
+            const profileData = docSnap.data();
+            // Профіль вважається заповненим, якщо є хоча б одне ключове поле
+            setHasProfile(
+              profileData.age ||
+              profileData.height ||
+              profileData.currentWeight ||
+              profileData.name
+            );
+          } else {
+            setHasProfile(false);
+          }
         } catch (err) {
           console.error("Помилка перевірки профілю:", err);
           setHasProfile(false);
@@ -37,6 +46,7 @@ function App() {
       } else {
         setHasProfile(false);
       }
+
       setLoading(false);
     });
 
@@ -59,37 +69,37 @@ function App() {
     );
   }
 
-  // Якщо не залогінений — тільки сторінка логіну
-  if (!user) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
-    );
-  }
-
-  // Якщо залогінений — показуємо навбар + роути
   return (
     <Router>
-      <Navbar />
+      {user && <Navbar />}
       <Routes>
-        {/* Якщо профіль НЕ заповнений — всі роути ведуть на профіль */}
-        {!hasProfile && <Route path="*" element={<Profile />} />}
-
-        {/* Якщо профіль заповнений — повна навігація */}
-        {hasProfile && (
+        {/* Якщо не залогінений — тільки логін */}
+        {!user && (
           <>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/diary" element={<Diary />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/recipes" element={<Recipes />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/programs" element={<Programs />} />
-            <Route path="/programs/:id" element={<ProgramDetail />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </>
+        )}
+
+        {/* Якщо залогінений */}
+        {user && (
+          <>
+            {/* Якщо профіль НЕ заповнений — всі роути на профіль */}
+            {!hasProfile && <Route path="*" element={<Profile />} />}
+
+            {/* Якщо профіль заповнений — повна навігація */}
+            {hasProfile && (
+              <>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/diary" element={<Diary />} />
+                <Route path="/progress" element={<Progress />} />
+                <Route path="/recipes" element={<Recipes />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/programs" element={<Programs />} />
+                <Route path="/programs/:id" element={<ProgramDetail />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
           </>
         )}
       </Routes>
