@@ -51,7 +51,7 @@ const Diary = () => {
 
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
 
-    // Real-time слухач змін (onSnapshot) — тепер дані оновлюються автоматично
+    // Real-time слухач змін (onSnapshot) — тепер дані оновлюються автоматично!
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -65,6 +65,9 @@ const Diary = () => {
 
       if (snap.exists()) {
         diaryData = snap.data();
+      } else {
+        // Створюємо порожній документ, якщо його немає
+        setDoc(diaryRef, diaryData);
       }
 
       setDiary(diaryData);
