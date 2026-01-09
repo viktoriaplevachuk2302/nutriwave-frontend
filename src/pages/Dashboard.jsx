@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -13,7 +13,7 @@ const Dashboard = () => {
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
   const [profile, setProfile] = useState(null);
-  const [recommendedCalories, setRecommendedCalories] = useState(1465);
+  const [recommendedCalories, setRecommendedCalories] = useState(1465); // з твого скріншоту
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
@@ -38,33 +38,6 @@ const Dashboard = () => {
     if (calories <= max * 1.1) return "#f0e68c";
     if (calories <= max * 1.3) return "#ffcc80";
     return "#ff8a80";
-  };
-
-  // Формула Міффліна-Сан Жеора
-  const calculateDailyCalories = (p) => {
-    if (!p || !p.age || !p.height || !p.currentWeight || !p.gender) return 1465;
-
-    let bmr = p.gender === "male"
-      ? 10 * p.currentWeight + 6.25 * p.height - 5 * p.age + 5
-      : 10 * p.currentWeight + 6.25 * p.height - 5 * p.age - 161;
-
-    const multipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9,
-    };
-
-    const tdee = bmr * (multipliers[p.activityLevel] || 1.2);
-
-    const adjustments = {
-      lose: -500,
-      maintain: 0,
-      gain: 500,
-    };
-
-    return Math.round(tdee + adjustments[p.goal]);
   };
 
   useEffect(() => {
@@ -122,7 +95,7 @@ const Dashboard = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-      await updateDoc(diaryRef, {
+      await setDoc(diaryRef, {
         [`meals.${selectedMeal}`]: arrayUnion(newFood),
         totalCalories: increment(newFood.calories),
         totalProtein: increment(newFood.protein),
@@ -157,7 +130,7 @@ const Dashboard = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-      await updateDoc(diaryRef, {
+      await setDoc(diaryRef, {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
       }, { merge: true });
