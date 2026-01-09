@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -13,7 +13,7 @@ const Dashboard = () => {
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
   const [profile, setProfile] = useState(null);
-  const [recommendedCalories, setRecommendedCalories] = useState(1465); // з твого скріншоту
+  const [recommendedCalories, setRecommendedCalories] = useState(1465);
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
@@ -35,9 +35,36 @@ const Dashboard = () => {
 
   const getMealCardColor = (calories, max) => {
     if (calories <= max) return "#C8D094";
-    if (calories <= max * 1.1) return "#f0e68c";
-    if (calories <= max * 1.3) return "#ffcc80";
-    return "#ff8a80";
+    if (calories <= max * 1.1) return "#f0e68c"; // жовтий
+    if (calories <= max * 1.3) return "#ffcc80"; // помаранчевий
+    return "#ff8a80"; // червоний
+  };
+
+  // Формула Міффліна-Сан Жеора (та сама, що в профілі)
+  const calculateDailyCalories = (p) => {
+    if (!p || !p.age || !p.height || !p.currentWeight || !p.gender) return 1465;
+
+    let bmr = p.gender === "male"
+      ? 10 * p.currentWeight + 6.25 * p.height - 5 * p.age + 5
+      : 10 * p.currentWeight + 6.25 * p.height - 5 * p.age - 161;
+
+    const multipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      very_active: 1.9,
+    };
+
+    const tdee = bmr * (multipliers[p.activityLevel] || 1.2);
+
+    const adjustments = {
+      lose: -500,
+      maintain: 0,
+      gain: 500,
+    };
+
+    return Math.round(tdee + adjustments[p.goal]);
   };
 
   useEffect(() => {
