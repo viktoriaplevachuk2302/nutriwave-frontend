@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { auth, db } from "../services/firebase";
 import { collection, getDocs, addDoc, query, orderBy } from "firebase/firestore";
 import { Line } from "react-chartjs-2";
@@ -21,6 +20,8 @@ const Progress = () => {
   const [currentWeight, setCurrentWeight] = useState("");
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +30,7 @@ const Progress = () => {
       setLoading(true);
 
       try {
-        // Завантажуємо історію ваги з підколекції weights
+        // Завантажуємо історію ваги
         const weightsRef = collection(db, "users", auth.currentUser.uid, "weights");
         const q = query(weightsRef, orderBy("date", "asc"));
         const querySnapshot = await getDocs(q);
@@ -40,11 +41,35 @@ const Progress = () => {
         });
         setWeightHistory(history);
 
-        // Завантажуємо профіль (для поточної ваги та цілі)
+        // Завантажуємо профіль
         const profileRef = doc(db, "users", auth.currentUser.uid);
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
           setProfile(profileSnap.data());
+        }
+
+        // Розрахунок серії днів (якщо є ваги)
+        if (history.length > 0) {
+          let streak = 1;
+          let maxStreak = 1;
+          let currentDate = new Date(history[history.length - 1].date);
+
+          for (let i = history.length - 2; i >= 0; i--) {
+            const prevDate = new Date(history[i].date);
+            const diffDays = Math.floor((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+              streak++;
+              maxStreak = Math.max(maxStreak, streak);
+            } else {
+              streak = 1;
+            }
+
+            currentDate = prevDate;
+          }
+
+          setCurrentStreak(streak);
+          setBestStreak(maxStreak);
         }
       } catch (err) {
         console.error("Помилка завантаження прогресу:", err);
@@ -61,19 +86,23 @@ const Progress = () => {
     if (!currentWeight || !auth.currentUser) return;
 
     try {
-      const weightRef = collection(db, "users", auth.currentUser.uid, "weights");
       const weightData = {
         weight: parseFloat(currentWeight),
         date: new Date().toISOString().split("T")[0],
         createdAt: new Date(),
       };
 
+      const weightRef = collection(db, "users", auth.currentUser.uid, "weights");
       await addDoc(weightRef, weightData);
+
       alert("Вагу додано!");
 
-      // Оновлюємо локально без перезавантаження
+      // Оновлюємо локально
       setWeightHistory((prev) => [...prev, weightData].sort((a, b) => a.date.localeCompare(b.date)));
       setCurrentWeight("");
+
+      // Оновлюємо серію (просто перезапустимо fetch)
+      fetchData();
     } catch (err) {
       alert("Помилка додавання ваги");
     }
@@ -185,10 +214,10 @@ const Progress = () => {
       {/* Серія днів */}
       <div className="card" style={{ textAlign: "center", background: "#C8D094" }}>
         <p style={{ fontSize: "1.3rem", color: "#5B7133" }}>
-          Поточна серія: 0 днів
+          Поточна серія: {currentStreak} днів
         </p>
         <p style={{ fontSize: "1.3rem", color: "#5B7133", fontWeight: "bold" }}>
-          Найкраща серія: 32 дні
+          Найкраща серія: {bestStreak} днів
         </p>
       </div>
     </div>
