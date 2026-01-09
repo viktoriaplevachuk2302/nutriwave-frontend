@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 const ProgramDetail = () => {
   const { id } = useParams();
@@ -72,17 +72,17 @@ const ProgramDetail = () => {
     setLoading(true);
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.post(
-        "https://nutriwave-backend1.vercel.app/api/users/me",
-        { selectedProgram: program.title },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await setDoc(userRef, {
+        selectedProgram: program.title,
+        updatedAt: new Date(),
+      }, { merge: true });
+
       alert(`Програму "${program.title}" вибрано! Тепер вона відображається в профілі.`);
       navigate("/profile");
     } catch (err) {
       console.error("Помилка вибору програми:", err);
-      alert("Помилка вибору програми. Перевірте підключення до бекенду.");
+      alert("Помилка вибору програми. Спробуйте ще раз.");
     } finally {
       setLoading(false);
     }

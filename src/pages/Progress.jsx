@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
+import { collection, getDocs, addDoc, query, orderBy } from "firebase/firestore";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -25,20 +25,26 @@ const Progress = () => {
     const fetchData = async () => {
       if (!auth.currentUser) return;
 
+      setLoading(true);
+
       try {
-        const token = await auth.currentUser.getIdToken();
+        // Завантажуємо історію ваги з підколекції weights
+        const weightsRef = collection(db, "users", auth.currentUser.uid, "weights");
+        const q = query(weightsRef, orderBy("date", "asc"));
+        const querySnapshot = await getDocs(q);
 
-        // Завантажуємо історію ваги
-        const weightRes = await axios.get("https://nutriwave-backend1.vercel.app/api/weight", {
-          headers: { Authorization: `Bearer ${token}` },
+        const history = [];
+        querySnapshot.forEach((doc) => {
+          history.push(doc.data());
         });
-        setWeightHistory(weightRes.data.sort((a, b) => a.date.localeCompare(b.date)));
+        setWeightHistory(history);
 
-        // Завантажуємо профіль (для майбутнього використання)
-        const profileRes = await axios.get("https://nutriwave-backend1.vercel.app/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProfile(profileRes.data);
+        // Завантажуємо профіль (для поточної ваги та цілі)
+        const profileRef = doc(db, "users", auth.currentUser.uid);
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+          setProfile(profileSnap.data());
+        }
       } catch (err) {
         console.error("Помилка завантаження прогресу:", err);
       } finally {
@@ -51,18 +57,22 @@ const Progress = () => {
 
   const handleAddWeight = async (e) => {
     e.preventDefault();
-    if (!currentWeight) return;
+    if (!currentWeight || !auth.currentUser) return;
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.post(
-        "https://nutriwave-backend1.vercel.app/api/weight",
-        { weight: parseFloat(currentWeight) },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const weightRef = collection(db, "users", auth.currentUser.uid, "weights");
+      const weightData = {
+        weight: parseFloat(currentWeight),
+        date: new Date().toISOString().split("T")[0],
+        createdAt: new Date(),
+      };
+
+      await addDoc(weightRef, weightData);
       alert("Вагу додано!");
+
+      // Оновлюємо локально без перезавантаження
+      setWeightHistory((prev) => [...prev, weightData].sort((a, b) => a.date.localeCompare(b.date)));
       setCurrentWeight("");
-      window.location.reload();
     } catch (err) {
       alert("Помилка додавання ваги");
     }

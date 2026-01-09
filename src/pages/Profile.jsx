@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -52,22 +52,24 @@ const Profile = () => {
     const fetchProfile = async () => {
       if (!auth.currentUser) return;
 
+      setLoading(true);
+
       try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await axios.get("https://nutriwave-backend1.vercel.app/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProfile(res.data);
-        if (res.data.age) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const docSnap = await getDoc(userRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setProfile(data);
           setForm({
-            name: res.data.name || "",
-            age: res.data.age || "",
-            height: res.data.height || "",
-            weight: res.data.currentWeight || "",
-            gender: res.data.gender || "female",
-            activityLevel: res.data.activityLevel || "sedentary",
-            goal: res.data.goal || "lose",
-            selectedProgram: res.data.selectedProgram || "",
+            name: data.name || "",
+            age: data.age || "",
+            height: data.height || "",
+            weight: data.currentWeight || "",
+            gender: data.gender || "female",
+            activityLevel: data.activityLevel || "sedentary",
+            goal: data.goal || "lose",
+            selectedProgram: data.selectedProgram || "",
           });
         }
       } catch (err) {
@@ -84,28 +86,26 @@ const Profile = () => {
     e.preventDefault();
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      const response = await axios.post(
-        "https://nutriwave-backend1.vercel.app/api/users/me",
-        {
-          name: form.name,
-          age: form.age ? parseInt(form.age, 10) : 0,
-          weight: form.weight ? parseFloat(form.weight) : 0,
-          height: form.height ? parseInt(form.height, 10) : 0,
-          gender: form.gender,
-          goal: form.goal,
-          activityLevel: form.activityLevel,
-          selectedProgram: form.selectedProgram, // Зберігаємо вибрану програму
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const data = {
+        name: form.name,
+        age: form.age ? parseInt(form.age, 10) : 0,
+        currentWeight: form.weight ? parseFloat(form.weight) : 0,
+        height: form.height ? parseInt(form.height, 10) : 0,
+        gender: form.gender,
+        goal: form.goal,
+        activityLevel: form.activityLevel,
+        selectedProgram: form.selectedProgram,
+        updatedAt: new Date(),
+      };
 
+      await setDoc(userRef, data, { merge: true });
       alert("Профіль збережено!");
-      setProfile(response.data.data); // Оновлюємо профіль одразу з відповіді
+      setProfile(data); // Оновлюємо локально
       setIsEditing(false);
     } catch (err) {
       console.error("Помилка збереження:", err);
-      alert("Помилка збереження профілю. Перевірте підключення до бекенду.");
+      alert("Помилка збереження профілю");
     }
   };
 
@@ -302,7 +302,7 @@ const Profile = () => {
             </p>
           </div>
 
-          {/* Відображення вибраної програми — тепер активно */}
+          {/* Відображення вибраної програми */}
           {profile.selectedProgram && (
             <div className="card" style={{ background: "#C8D094", textAlign: "center", marginBottom: "2rem" }}>
               <p style={{ fontSize: "1.3rem", color: "#5B7133" }}>

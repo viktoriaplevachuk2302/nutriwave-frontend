@@ -29,6 +29,7 @@ function App() {
           });
           setHasProfile(!!res.data.age); // профіль заповнений, якщо є вік
         } catch (err) {
+          console.error("Помилка перевірки профілю:", err);
           setHasProfile(false);
         }
       } else {

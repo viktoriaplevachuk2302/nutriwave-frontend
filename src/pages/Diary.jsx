@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const Diary = () => {
   const [diary, setDiary] = useState({
@@ -37,39 +37,42 @@ const Diary = () => {
     return "#ff8a80"; // червоний
   };
 
-  const fetchDiary = async (date) => {
-    if (!auth.currentUser) return;
-
-    setLoading(true);
-
-    try {
-      const token = await auth.currentUser.getIdToken();
-      const res = await axios.get(`https://nutriwave-backend1.vercel.app/api/diary${date ? '?date=' + date : ''}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDiary(res.data || {
-        totalCalories: 0,
-        totalProtein: 0,
-        totalCarbs: 0,
-        totalFat: 0,
-        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-      });
-    } catch (err) {
-      console.error("Помилка завантаження щоденника:", err);
-      setDiary({
-        totalCalories: 0,
-        totalProtein: 0,
-        totalCarbs: 0,
-        totalFat: 0,
-        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchDiary(selectedDate);
+    const fetchDiary = async () => {
+      if (!auth.currentUser) return;
+
+      setLoading(true);
+
+      try {
+        const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
+        const docSnap = await getDoc(diaryRef);
+
+        if (docSnap.exists()) {
+          setDiary(docSnap.data());
+        } else {
+          setDiary({
+            totalCalories: 0,
+            totalProtein: 0,
+            totalCarbs: 0,
+            totalFat: 0,
+            meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          });
+        }
+      } catch (err) {
+        console.error("Помилка завантаження щоденника:", err);
+        setDiary({
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDiary();
   }, [selectedDate]);
 
   const formatDate = (dateStr) => {
@@ -87,24 +90,38 @@ const Diary = () => {
   const handleAddFood = async (e) => {
     e.preventDefault();
 
-    const data = {
-      mealType: selectedMeal,
+    const newFood = {
       foodName: foodForm.foodName,
       calories: parseInt(foodForm.calories),
       protein: parseFloat(foodForm.protein) || 0,
       carbs: parseFloat(foodForm.carbs) || 0,
       fat: parseFloat(foodForm.fat) || 0,
-      date: selectedDate,
     };
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.post("https://nutriwave-backend1.vercel.app/api/diary/meal", data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
+      const docSnap = await getDoc(diaryRef);
+      let diaryData = docSnap.exists() ? docSnap.data() : {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+      };
+
+      // Додаємо нову їжу
+      diaryData.meals[selectedMeal] = [...(diaryData.meals[selectedMeal] || []), newFood];
+
+      // Оновлюємо підсумки
+      diaryData.totalCalories += newFood.calories;
+      diaryData.totalProtein += newFood.protein;
+      diaryData.totalCarbs += newFood.carbs;
+      diaryData.totalFat += newFood.fat;
+
+      await setDoc(diaryRef, diaryData, { merge: true });
+      setDiary(diaryData);
       alert("Їжу додано!");
       setShowModal(false);
-      fetchDiary(selectedDate);
     } catch (err) {
       alert("Помилка додавання їжі");
     }
@@ -114,15 +131,52 @@ const Diary = () => {
     if (!confirm("Видалити цю страву?")) return;
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.delete("https://nutriwave-backend1.vercel.app/api/diary/meal", {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { mealType, index, date: selectedDate },
-      });
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
+      const docSnap = await getDoc(diaryRef);
+      if (!docSnap.exists()) return;
+
+      const diaryData = docSnap.data();
+      const food = diaryData.meals[mealType][index];
+
+      diaryData.meals[mealType].splice(index, 1);
+
+      // Оновлюємо підсумки
+      diaryData.totalCalories -= food.calories;
+      diaryData.totalProtein -= food.protein;
+      diaryData.totalCarbs -= food.carbs;
+      diaryData.totalFat -= food.fat;
+
+      await setDoc(diaryRef, diaryData, { merge: true });
+      setDiary(diaryData);
       alert("Страву видалено!");
-      fetchDiary(selectedDate);
     } catch (err) {
       alert("Помилка видалення");
+    }
+  };
+
+  const addWater = async () => {
+    if (diary.waterGlasses >= 8) return;
+
+    try {
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
+      const docSnap = await getDoc(diaryRef);
+      let diaryData = docSnap.exists() ? docSnap.data() : {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        waterGlasses: 0,
+        waterLiters: 0,
+      };
+
+      diaryData.waterGlasses = (diaryData.waterGlasses || 0) + 1;
+      diaryData.waterLiters = (diaryData.waterLiters || 0) + 0.25;
+
+      await setDoc(diaryRef, diaryData, { merge: true });
+      setDiary(diaryData);
+    } catch (err) {
+      alert("Помилка додавання води");
     }
   };
 

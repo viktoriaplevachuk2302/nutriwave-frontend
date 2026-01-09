@@ -1,12 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut 
-} from "firebase/auth";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAhjyHQwNDgXOIyvPS5Yr4_PCDMt4JBuUQ",
@@ -19,19 +13,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Вхід через Google
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
-
-// Реєстрація email + пароль
-export const registerWithEmail = (email, password) => 
-  createUserWithEmailAndPassword(auth, email, password);
-
-// Вхід email + пароль
-export const loginWithEmail = (email, password) => 
-  signInWithEmailAndPassword(auth, email, password);
-
-// Вихід
-export const logout = () => signOut(auth);
+export { auth, db };

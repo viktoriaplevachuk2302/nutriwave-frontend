@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
+import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
 
 const Recipes = () => {
   const [recipes, setRecipes] = useState([]);
@@ -9,6 +9,7 @@ const Recipes = () => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const categories = {
     all: "Всі",
@@ -19,13 +20,24 @@ const Recipes = () => {
   };
 
   useEffect(() => {
-    axios
-      .get("https://nutriwave-backend1.vercel.app/api/recipes")
-      .then((res) => {
-        setRecipes(res.data);
-        setFilteredRecipes(res.data);
-      })
-      .catch((err) => console.error("Помилка завантаження рецептів:", err));
+    const fetchRecipes = async () => {
+      try {
+        const recipesRef = collection(db, "recipes");
+        const querySnapshot = await getDocs(recipesRef);
+        const recipesData = [];
+        querySnapshot.forEach((doc) => {
+          recipesData.push({ id: doc.id, ...doc.data() });
+        });
+        setRecipes(recipesData);
+        setFilteredRecipes(recipesData);
+      } catch (err) {
+        console.error("Помилка завантаження рецептів:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
   }, []);
 
   useEffect(() => {
@@ -37,29 +49,40 @@ const Recipes = () => {
   }, [selectedCategory, recipes]);
 
   const handleAddToDiary = async (mealType) => {
-    if (!selectedRecipe) return;
+    if (!selectedRecipe || !auth.currentUser) return;
 
     const data = {
       mealType,
       foodName: selectedRecipe.title,
-      calories: selectedRecipe.calories,
+      calories: selectedRecipe.calories || 0,
       protein: selectedRecipe.protein || 0,
       carbs: selectedRecipe.carbs || 0,
       fat: selectedRecipe.fat || 0,
+      date: new Date().toISOString().split("T")[0],
     };
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.post("https://nutriwave-backend1.vercel.app/api/diary/meal", data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", data.date);
+      await updateDoc(diaryRef, {
+        [`meals.${mealType}`]: arrayUnion(data),
+        totalCalories: increment(data.calories),
+        totalProtein: increment(data.protein),
+        totalCarbs: increment(data.carbs),
+        totalFat: increment(data.fat),
+      }, { merge: true });
+
       alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
       setShowAddModal(false);
       setSelectedRecipe(null);
     } catch (err) {
+      console.error("Помилка додавання рецепту:", err);
       alert("Помилка додавання рецепту в щоденник");
     }
   };
+
+  if (loading) {
+    return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження рецептів...</div>;
+  }
 
   return (
     <div className="container">
