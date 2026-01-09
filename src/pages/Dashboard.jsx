@@ -12,6 +12,7 @@ const Dashboard = () => {
     waterLiters: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
+  const [profile, setProfile] = useState(null);
   const [recommendedCalories, setRecommendedCalories] = useState(1465);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +40,32 @@ const Dashboard = () => {
     return "#ff8a80";
   };
 
+  const calculateDailyCalories = (p) => {
+    if (!p || !p.age || !p.height || !p.currentWeight || !p.gender) return 1465;
+
+    let bmr = p.gender === "male"
+      ? 10 * p.currentWeight + 6.25 * p.height - 5 * p.age + 5
+      : 10 * p.currentWeight + 6.25 * p.height - 5 * p.age - 161;
+
+    const multipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      very_active: 1.9,
+    };
+
+    const tdee = bmr * (multipliers[p.activityLevel] || 1.2);
+
+    const adjustments = {
+      lose: -500,
+      maintain: 0,
+      gain: 500,
+    };
+
+    return Math.round(tdee + adjustments[p.goal]);
+  };
+
   useEffect(() => {
     if (!auth.currentUser) return;
 
@@ -47,7 +74,7 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time оновлення
+    // Real-time слухач змін
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -66,6 +93,17 @@ const Dashboard = () => {
       setDiary(diaryData);
     });
 
+    const fetchProfile = async () => {
+      const profileRef = doc(db, "users", auth.currentUser.uid);
+      const profileSnap = await getDoc(profileRef);
+      if (profileSnap.exists()) {
+        const data = profileSnap.data();
+        setProfile(data);
+        setRecommendedCalories(calculateDailyCalories(data));
+      }
+    };
+
+    fetchProfile();
     setLoading(false);
 
     return () => unsubscribe();
@@ -103,7 +141,7 @@ const Dashboard = () => {
         totalFat: increment(newFood.fat),
       }, { merge: true });
 
-      alert("Їжу додано!");
+      alert(" Їжу додано!");
       setShowModal(false);
     } catch (err) {
       console.error("Помилка додавання їжі:", err);
