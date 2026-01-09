@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { auth } from "../services/firebase";
@@ -5,6 +6,7 @@ import { auth } from "../services/firebase";
 const ProgramDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const programs = {
     keto: {
@@ -60,19 +62,29 @@ const ProgramDetail = () => {
   const program = programs[id] || programs.keto;
 
   const handleSelectProgram = async () => {
+    if (!auth.currentUser) {
+      alert("Будь ласка, увійдіть у свій акаунт");
+      return;
+    }
+
     if (!confirm(`Вибрати програму "${program.title}"?`)) return;
+
+    setLoading(true);
 
     try {
       const token = await auth.currentUser.getIdToken();
       await axios.post(
-        "https://nutriwave-backend.onrender.com/api/users/me",
+        "https://nutriwave-backend1.vercel.app/api/users/me",
         { selectedProgram: program.title },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(`Програму "${program.title}" вибрано!`);
-      navigate("/");
+      alert(`Програму "${program.title}" вибрано! Тепер вона відображається в профілі.`);
+      navigate("/profile");
     } catch (err) {
-      alert("Помилка вибору програми");
+      console.error("Помилка вибору програми:", err);
+      alert("Помилка вибору програми. Перевірте підключення до бекенду.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,8 +127,9 @@ const ProgramDetail = () => {
           onClick={handleSelectProgram}
           className="btn btn-primary"
           style={{ width: "100%", padding: "1rem", fontSize: "1.2rem" }}
+          disabled={loading}
         >
-          Вибрати цю програму
+          {loading ? "Вибираємо..." : "Вибрати цю програму"}
         </button>
       </div>
     </div>

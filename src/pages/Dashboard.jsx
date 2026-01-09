@@ -78,7 +78,7 @@ const Dashboard = () => {
         const token = await auth.currentUser.getIdToken();
 
         // Завантажуємо щоденник
-        const diaryRes = await axios.get("https://nutriwave-backend.fly.dev/api/diary", {
+        const diaryRes = await axios.get("https://nutriwave-backend1.vercel.app/api/diary", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDiary(diaryRes.data || {
@@ -92,7 +92,7 @@ const Dashboard = () => {
         });
 
         // Завантажуємо профіль для розрахунку калорій
-        const profileRes = await axios.get("https://nutriwave-backend.fly.dev/api/users/me", {
+        const profileRes = await axios.get("https://nutriwave-backend1.vercel.app/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(profileRes.data);
@@ -129,7 +129,7 @@ const Dashboard = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.post("https://nutriwave-backend.fly.dev/api/diary/meal", data, {
+      await axios.post("https://nutriwave-backend1.vercel.app/api/diary/meal", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Їжу додано!");
@@ -145,7 +145,7 @@ const Dashboard = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.post("https://nutriwave-backend.fly.dev/api/diary/water", {}, {
+      await axios.post("https://nutriwave-backend1.vercel.app/api/diary/water", {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDiary({

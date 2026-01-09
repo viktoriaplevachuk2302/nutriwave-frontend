@@ -14,7 +14,6 @@ const Login = () => {
   const handleGoogle = async () => {
     try {
       await signInWithGoogle();
-      // Після входу перевіряємо профіль (див. App.jsx)
       navigate("/");
     } catch (err) {
       setError("Помилка входу через Google: " + err.message);

@@ -14,6 +14,7 @@ const Profile = () => {
     gender: "female",
     activityLevel: "sedentary",
     goal: "lose",
+    selectedProgram: "", // Додано для майбутнього вибору програми
   });
 
   // Формула Міффліна-Сан Жеора
@@ -53,7 +54,7 @@ const Profile = () => {
 
       try {
         const token = await auth.currentUser.getIdToken();
-        const res = await axios.get("https://nutriwave-backend.fly.dev/api/users/me", {
+        const res = await axios.get("https://nutriwave-backend1.vercel.app/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(res.data);
@@ -66,6 +67,7 @@ const Profile = () => {
             gender: res.data.gender || "female",
             activityLevel: res.data.activityLevel || "sedentary",
             goal: res.data.goal || "lose",
+            selectedProgram: res.data.selectedProgram || "", // Підтримка вибраної програми
           });
         }
       } catch (err) {
@@ -83,23 +85,26 @@ const Profile = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.post(
-        "https://nutriwave-backend.fly.dev/api/users/me",
+      const response = await axios.post(
+        "https://nutriwave-backend1.vercel.app/api/users/me",
         {
           name: form.name,
-          age: parseInt(form.age),
-          weight: parseFloat(form.weight),
-          height: parseInt(form.height),
+          age: form.age ? parseInt(form.age, 10) : 0,
+          weight: form.weight ? parseFloat(form.weight) : 0,
+          height: form.height ? parseInt(form.height, 10) : 0,
           gender: form.gender,
           goal: form.goal,
           activityLevel: form.activityLevel,
+          selectedProgram: form.selectedProgram, // Зберігаємо вибрану програму
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       alert("Профіль збережено!");
+      setProfile(response.data.data); // Оновлюємо профіль одразу
       setIsEditing(false);
-      window.location.reload();
     } catch (err) {
+      console.error("Помилка збереження:", err);
       alert("Помилка збереження профілю");
     }
   };
@@ -297,14 +302,14 @@ const Profile = () => {
             </p>
           </div>
 
-          {/* Майбутнє місце для вибраної програми */}
-          {/* {profile.selectedProgram && (
+          {/* Відображення вибраної програми — тепер активно */}
+          {profile.selectedProgram && (
             <div className="card" style={{ background: "#C8D094", textAlign: "center", marginBottom: "2rem" }}>
               <p style={{ fontSize: "1.3rem", color: "#5B7133" }}>
                 Вибрана програма: <strong>{profile.selectedProgram}</strong>
               </p>
             </div>
-          )} */}
+          )}
 
           <button
             className="btn btn-primary"
