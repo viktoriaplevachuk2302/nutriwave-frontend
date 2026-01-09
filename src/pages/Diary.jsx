@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore"; // ← додали getDoc
 
 const Diary = () => {
   const [diary, setDiary] = useState({
@@ -51,7 +51,7 @@ const Diary = () => {
 
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
 
-    // Real-time слухач змін (onSnapshot) — тепер дані оновлюються автоматично!
+    // Real-time слухач змін (onSnapshot)
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -66,7 +66,7 @@ const Diary = () => {
       if (snap.exists()) {
         diaryData = snap.data();
       } else {
-        // Створюємо порожній документ, якщо його немає
+        // Створюємо порожній документ
         setDoc(diaryRef, diaryData);
       }
 
@@ -137,7 +137,6 @@ const Diary = () => {
         totalFat: increment(-(removedFood.fat || 0)),
       }, { merge: true });
 
-      // Оновлюємо локальний стан
       setDiary(prev => ({
         ...prev,
         totalCalories: (prev.totalCalories || 0) - removedFood.calories,
