@@ -797,7 +797,6 @@ const Recipes = () => {
     const date = new Date().toISOString().split("T")[0];
 
     const data = {
-      mealType,
       foodName: selectedRecipe.title,
       calories: selectedRecipe.calories || 0,
       protein: selectedRecipe.protein || 0,
