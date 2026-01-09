@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore"; // ← усі функції тут!
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -74,7 +74,7 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time слухач змін
+    // Real-time оновлення (onSnapshot)
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -121,7 +121,6 @@ const Dashboard = () => {
     e.preventDefault();
 
     const newFood = {
-      mealType: selectedMeal,
       foodName: foodForm.foodName,
       calories: parseInt(foodForm.calories) || 0,
       protein: parseFloat(foodForm.protein) || 0,
@@ -142,7 +141,7 @@ const Dashboard = () => {
         totalFat: increment(newFood.fat),
       }, { merge: true });
 
-      alert(" Їжу додано!");
+      alert("Їжу додано!");
       setShowModal(false);
     } catch (err) {
       console.error("Помилка додавання їжі:", err);
@@ -161,6 +160,8 @@ const Dashboard = () => {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
       }, { merge: true });
+
+      alert("Воду додано!");
     } catch (err) {
       console.error("Помилка додавання води:", err);
       alert("Помилка додавання води");
@@ -217,7 +218,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Права частина — картки прийомів їжі з списком їжі */}
+        {/* Права частина — картки прийомів їжі */}
         <div>
           {Object.keys(mealData).map((meal) => {
             const { title, icon, range, max } = mealData[meal];
@@ -229,8 +230,9 @@ const Dashboard = () => {
                 key={meal}
                 className="meal-card"
                 style={{ background: cardColor, marginBottom: "1rem", cursor: "pointer" }}
+                onClick={() => openMealModal(meal)}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <h3 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>
                       {icon} {title}
@@ -240,53 +242,8 @@ const Dashboard = () => {
                     </p>
                     <p style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{mealCalories} ккал</p>
                   </div>
-                  <button
-                    onClick={() => openMealModal(meal)}
-                    style={{
-                      background: "#5B7133",
-                      color: "white",
-                      width: "50px",
-                      height: "50px",
-                      borderRadius: "50%",
-                      fontSize: "2rem",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    +
-                  </button>
+                  <div style={{ fontSize: "3rem", color: "#5B7133" }}>+</div>
                 </div>
-
-                {/* Список доданих страв у слоті */}
-                {diary.meals?.[meal]?.length > 0 ? (
-                  <div style={{ marginTop: "1rem" }}>
-                    {diary.meals[meal].map((food, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          background: "rgba(255,255,255,0.8)",
-                          padding: "0.75rem",
-                          borderRadius: "8px",
-                          marginBottom: "0.5rem",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div>
-                          <strong>{food.foodName}</strong>
-                          <div style={{ fontSize: "0.9rem", color: "#555" }}>
-                            {food.calories} ккал · Б: {food.protein}г · В: {food.carbs}г · Ж: {food.fat}г
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ textAlign: "center", color: "#666", fontStyle: "italic" }}>
-                    Немає записів
-                  </p>
-                )}
               </div>
             );
           })}
