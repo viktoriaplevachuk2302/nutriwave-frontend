@@ -139,7 +139,7 @@ const Diary = () => {
       if (!docSnap.exists()) return;
 
       const diaryData = docSnap.data();
-      const foods = diaryData.meals[mealType] || [];
+      const foods = diaryData.meals?.[mealType] || [];
       const removedFood = foods[index];
 
       const updatedFoods = foods.filter((_, i) => i !== index);
