@@ -27,7 +27,9 @@ function App() {
           const res = await axios.get("https://nutriwave-backend1.vercel.app/api/users/me", {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setHasProfile(!!res.data.age); // профіль заповнений, якщо є вік
+          // Перевіряємо, чи профіль існує і заповнений (наприклад, є ім'я або вік)
+          const profileData = res.data;
+          setHasProfile(!!profileData && (profileData.age || profileData.name || profileData.height));
         } catch (err) {
           console.error("Помилка перевірки профілю:", err);
           setHasProfile(false);
