@@ -74,7 +74,7 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time слухач змін (onSnapshot)
+    // Real-time слухач змін
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -88,9 +88,6 @@ const Dashboard = () => {
 
       if (snap.exists()) {
         diaryData = snap.data();
-      } else {
-        // Створюємо порожній документ
-        setDoc(diaryRef, diaryData);
       }
 
       setDiary(diaryData);
