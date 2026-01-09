@@ -219,81 +219,81 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Права частина — картки прийомів їжі з повним списком страв */}
-        <div>
-          {Object.keys(mealData).map((meal) => {
-            const { title, icon, range, max } = mealData[meal];
-            const foods = diary.meals?.[meal] || [];
-            const mealCalories = foods.reduce((sum, f) => sum + (f.calories || 0), 0);
-            const cardColor = getMealCardColor(mealCalories, max);
+        {/* Права частина — картки прийомів їжі */}
+<div>
+  {Object.keys(mealData).map((meal) => {
+    const { title, icon, range, max } = mealData[meal];
+    const foods = diary.meals?.[meal] || [];
+    const mealCalories = foods.reduce((sum, item) => sum + (item.calories || 0), 0);
+    const cardColor = getMealCardColor(mealCalories, max);
 
-            return (
-              <div
-                key={meal}
-                className="meal-card"
-                style={{ background: cardColor, marginBottom: "1rem", cursor: "pointer" }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                  <div>
-                    <h3 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>
-                      {icon} {title}
-                    </h3>
-                    <p style={{ color: "#5B7133", marginBottom: "0.5rem" }}>
-                      Рекомендовано: {range}
-                    </p>
-                    <p style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{mealCalories} ккал</p>
-                  </div>
-                  <button
-                    onClick={() => openMealModal(meal)}
-                    style={{
-                      background: "#5B7133",
-                      color: "white",
-                      width: "50px",
-                      height: "50px",
-                      borderRadius: "50%",
-                      fontSize: "2rem",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Список доданих страв у слоті */}
-                {foods.length > 0 ? (
-                  <div style={{ marginTop: "1rem" }}>
-                    {foods.map((food, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          background: "rgba(255,255,255,0.8)",
-                          padding: "0.75rem",
-                          borderRadius: "8px",
-                          marginBottom: "0.5rem",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div>
-                          <strong>{food.foodName}</strong>
-                          <div style={{ fontSize: "0.9rem", color: "#555" }}>
-                            {food.calories} ккал · Б: {food.protein}г · В: {food.carbs}г · Ж: {food.fat}г
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ textAlign: "center", color: "#666", fontStyle: "italic" }}>
-                    Немає записів
-                  </p>
-                )}
-              </div>
-            );
-          })}
+    return (
+      <div
+        key={meal}
+        className="meal-card"
+        style={{ background: cardColor, marginBottom: "1rem", padding: "1rem", borderRadius: "12px" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div>
+            <h3 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>
+              {icon} {title}
+            </h3>
+            <p style={{ color: "#5B7133", marginBottom: "0.5rem" }}>
+              Рекомендовано: {range}
+            </p>
+            <p style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{mealCalories} ккал</p>
+          </div>
+          <button
+            onClick={() => openMealModal(meal)}
+            style={{
+              background: "#5B7133",
+              color: "white",
+              width: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              fontSize: "2rem",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            +
+          </button>
         </div>
+
+        {/* Список доданих страв */}
+        {foods.length > 0 ? (
+          <div style={{ marginTop: "1rem" }}>
+            {foods.map((food, index) => (
+              <div
+                key={index}
+                style={{
+                  background: "rgba(255,255,255,0.8)",
+                  padding: "0.75rem",
+                  borderRadius: "8px",
+                  marginBottom: "0.5rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <strong>{food.foodName}</strong>
+                  <div style={{ fontSize: "0.9rem", color: "#555" }}>
+                    {food.calories} ккал · Б: {food.protein}г · В: {food.carbs}г · Ж: {food.fat}г
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: "center", color: "#666", fontStyle: "italic" }}>
+            Немає записів
+          </p>
+        )}
+      </div>
+    );
+  })}
+</div>
       </div>
 
       {/* Блок води */}
