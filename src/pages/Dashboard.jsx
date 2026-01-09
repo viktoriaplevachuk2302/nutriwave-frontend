@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -13,7 +13,7 @@ const Dashboard = () => {
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
   const [profile, setProfile] = useState(null);
-  const [recommendedCalories, setRecommendedCalories] = useState(1465);
+  const [recommendedCalories, setRecommendedCalories] = useState(1465); // з твого скріншоту
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
@@ -35,9 +35,9 @@ const Dashboard = () => {
 
   const getMealCardColor = (calories, max) => {
     if (calories <= max) return "#C8D094";
-    if (calories <= max * 1.1) return "#f0e68c"; // жовтий
-    if (calories <= max * 1.3) return "#ffcc80"; // помаранчевий
-    return "#ff8a80"; // червоний
+    if (calories <= max * 1.1) return "#f0e68c";
+    if (calories <= max * 1.3) return "#ffcc80";
+    return "#ff8a80";
   };
 
   // Формула Міффліна-Сан Жеора (та сама, що в профілі)
@@ -78,9 +78,21 @@ const Dashboard = () => {
         const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
         const diarySnap = await getDoc(diaryRef);
 
+        let diaryData = {
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          waterGlasses: 0,
+          waterLiters: 0,
+          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        };
+
         if (diarySnap.exists()) {
-          setDiary(diarySnap.data());
+          diaryData = diarySnap.data();
         }
+
+        setDiary(diaryData);
 
         const profileRef = doc(db, "users", auth.currentUser.uid);
         const profileSnap = await getDoc(profileRef);
@@ -122,6 +134,7 @@ const Dashboard = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+
       await setDoc(diaryRef, {
         [`meals.${selectedMeal}`]: arrayUnion(newFood),
         totalCalories: increment(newFood.calories),
@@ -133,10 +146,10 @@ const Dashboard = () => {
       // Оновлюємо локальний стан
       setDiary(prev => ({
         ...prev,
-        totalCalories: prev.totalCalories + newFood.calories,
-        totalProtein: prev.totalProtein + newFood.protein,
-        totalCarbs: prev.totalCarbs + newFood.carbs,
-        totalFat: prev.totalFat + newFood.fat,
+        totalCalories: (prev.totalCalories || 0) + newFood.calories,
+        totalProtein: (prev.totalProtein || 0) + newFood.protein,
+        totalCarbs: (prev.totalCarbs || 0) + newFood.carbs,
+        totalFat: (prev.totalFat || 0) + newFood.fat,
         meals: {
           ...prev.meals,
           [selectedMeal]: [...(prev.meals[selectedMeal] || []), newFood],
@@ -157,6 +170,7 @@ const Dashboard = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+
       await setDoc(diaryRef, {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
@@ -227,7 +241,7 @@ const Dashboard = () => {
         <div>
           {Object.keys(mealData).map((meal) => {
             const { title, icon, range, max } = mealData[meal];
-            const mealCalories = diary.meals[meal]?.reduce((sum, item) => sum + item.calories, 0) || 0;
+            const mealCalories = diary.meals?.[meal]?.reduce((sum, item) => sum + (item.calories || 0), 0) || 0;
             const cardColor = getMealCardColor(mealCalories, max);
 
             return (
