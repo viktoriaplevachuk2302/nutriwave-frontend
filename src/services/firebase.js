@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAhjyHQwNDgXOIyvPS5Yr4_PCDMt4JBuUQ",
@@ -50,7 +50,6 @@ const loginWithEmail = async (email, password) => {
   }
 };
 
-// Функція виходу (додаємо саме її!)
 const logout = async () => {
   try {
     await signOut(auth);
@@ -67,5 +66,11 @@ export {
   signInWithGoogle, 
   registerWithEmail, 
   loginWithEmail, 
-  logout  
+  logout,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  arrayUnion,
+  increment
 };
