@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -67,49 +67,46 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!auth.currentUser) return;
+    if (!auth.currentUser) return;
 
-      setLoading(true);
+    setLoading(true);
 
-      try {
-        const date = new Date().toISOString().split("T")[0];
-        const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-        const diarySnap = await getDoc(diaryRef);
+    const date = new Date().toISOString().split("T")[0];
+    const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-        let diaryData = {
-          totalCalories: 0,
-          totalProtein: 0,
-          totalCarbs: 0,
-          totalFat: 0,
-          waterGlasses: 0,
-          waterLiters: 0,
-          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        };
+    // Real-time слухач змін
+    const unsubscribe = onSnapshot(diaryRef, (snap) => {
+      let diaryData = {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        waterGlasses: 0,
+        waterLiters: 0,
+        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+      };
 
-        if (diarySnap.exists()) {
-          diaryData = diarySnap.data();
-        } else {
-          await setDoc(diaryRef, diaryData);
-        }
+      if (snap.exists()) {
+        diaryData = snap.data();
+      }
 
-        setDiary(diaryData);
+      setDiary(diaryData);
+    });
 
-        const profileRef = doc(db, "users", auth.currentUser.uid);
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists()) {
-          const data = profileSnap.data();
-          setProfile(data);
-          setRecommendedCalories(calculateDailyCalories(data));
-        }
-      } catch (err) {
-        console.error("Помилка завантаження:", err);
-      } finally {
-        setLoading(false);
+    const fetchProfile = async () => {
+      const profileRef = doc(db, "users", auth.currentUser.uid);
+      const profileSnap = await getDoc(profileRef);
+      if (profileSnap.exists()) {
+        const data = profileSnap.data();
+        setProfile(data);
+        setRecommendedCalories(calculateDailyCalories(data));
       }
     };
 
-    fetchData();
+    fetchProfile();
+    setLoading(false);
+
+    return () => unsubscribe();
   }, []);
 
   const consumed = diary.totalCalories || 0;
@@ -135,7 +132,6 @@ const Dashboard = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-
       await setDoc(diaryRef, {
         [`meals.${selectedMeal}`]: arrayUnion(newFood),
         totalCalories: increment(newFood.calories),
@@ -143,19 +139,6 @@ const Dashboard = () => {
         totalCarbs: increment(newFood.carbs),
         totalFat: increment(newFood.fat),
       }, { merge: true });
-
-      // Оновлюємо локальний стан
-      setDiary(prev => ({
-        ...prev,
-        totalCalories: (prev.totalCalories || 0) + newFood.calories,
-        totalProtein: (prev.totalProtein || 0) + newFood.protein,
-        totalCarbs: (prev.totalCarbs || 0) + newFood.carbs,
-        totalFat: (prev.totalFat || 0) + newFood.fat,
-        meals: {
-          ...prev.meals,
-          [selectedMeal]: [...(prev.meals[selectedMeal] || []), newFood],
-        },
-      }));
 
       alert("Їжу додано!");
       setShowModal(false);
@@ -171,17 +154,11 @@ const Dashboard = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-
       await setDoc(diaryRef, {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
       }, { merge: true });
 
-      setDiary(prev => ({
-        ...prev,
-        waterGlasses: (prev.waterGlasses || 0) + 1,
-        waterLiters: (prev.waterLiters || 0) + 0.25,
-      }));
     } catch (err) {
       console.error("Помилка додавання води:", err);
       alert("Помилка додавання води");
@@ -222,7 +199,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginTop: "2rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr", gap: "1.5rem", marginTop: "2rem" }}>
             <div className="macro-item">
               <strong>Вуглеводи</strong>
               <div>{diary.totalCarbs || 0}г</div>
@@ -354,7 +331,7 @@ const Dashboard = () => {
                 step="0.1"
                 placeholder="Вуглеводи (г)"
                 value={foodForm.carbs}
-                onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
+                onChange={(e) => setForm({ ...form, carbs: e.target.value })}
                 required
                 style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
