@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
