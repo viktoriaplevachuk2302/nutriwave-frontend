@@ -15,17 +15,17 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar" style={{
+    <nav style={{
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: "1rem 2rem",
-      background: "#f8f8f5",
-      boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+      padding: "0.8rem 2rem",
+      background: "#5B7133", // зелений фон як на фото
+      color: "white",
+      boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
       position: "sticky",
       top: 0,
       zIndex: 1000,
-      borderBottom: "1px solid #C8D094",
     }}>
       {/* Логотип / назва */}
       <h1 
@@ -33,13 +33,10 @@ const Navbar = () => {
           margin: 0,
           fontSize: "1.8rem",
           fontWeight: "bold",
-          color: "#5B7133",
+          color: "white",
           cursor: "pointer",
-          transition: "color 0.3s",
         }}
         onClick={() => navigate("/")}
-        onMouseEnter={(e) => e.target.style.color = "#7A8D4A"}
-        onMouseLeave={(e) => e.target.style.color = "#5B7133"}
       >
         NutriWave
       </h1>
@@ -51,33 +48,117 @@ const Navbar = () => {
         gap: "1rem",
         flexWrap: "wrap",
       }}>
-        <button className="btn btn-outline" onClick={() => navigate("/")}>
+        <button 
+          className="btn" 
+          style={{
+            background: "transparent",
+            border: "2px solid white",
+            color: "white",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s",
+          }}
+          onClick={() => navigate("/")}
+        >
           Головна
         </button>
-        <button className="btn btn-outline" onClick={() => navigate("/diary")}>
+
+        <button 
+          className="btn" 
+          style={{
+            background: "transparent",
+            border: "2px solid white",
+            color: "white",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s",
+          }}
+          onClick={() => navigate("/diary")}
+        >
           Щоденник
         </button>
-        <button className="btn btn-outline" onClick={() => navigate("/progress")}>
+
+        <button 
+          className="btn" 
+          style={{
+            background: "transparent",
+            border: "2px solid white",
+            color: "white",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s",
+          }}
+          onClick={() => navigate("/progress")}
+        >
           Прогрес
         </button>
-        <button className="btn btn-outline" onClick={() => navigate("/programs")}>
+
+        <button 
+          className="btn" 
+          style={{
+            background: "transparent",
+            border: "2px solid white",
+            color: "white",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s",
+          }}
+          onClick={() => navigate("/programs")}
+        >
           Програми
         </button>
-        <button className="btn btn-outline" onClick={() => navigate("/recipes")}>
+
+        <button 
+          className="btn" 
+          style={{
+            background: "transparent",
+            border: "2px solid white",
+            color: "white",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s",
+          }}
+          onClick={() => navigate("/recipes")}
+        >
           Рецепти
         </button>
-        <button className="btn btn-outline" onClick={() => navigate("/profile")}>
+
+        <button 
+          className="btn" 
+          style={{
+            background: "transparent",
+            border: "2px solid white",
+            color: "white",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s",
+          }}
+          onClick={() => navigate("/profile")}
+        >
           Профіль
         </button>
+
         <button 
-          className="btn btn-danger" 
           onClick={handleLogout}
           style={{
             background: "#d32f2f",
             color: "white",
-            padding: "0.75rem 1.5rem",
-            borderRadius: "8px",
             border: "none",
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            fontWeight: "600",
             cursor: "pointer",
             transition: "background 0.3s",
           }}
