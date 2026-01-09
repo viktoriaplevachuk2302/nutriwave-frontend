@@ -90,7 +90,6 @@ const Dashboard = () => {
         if (diarySnap.exists()) {
           diaryData = diarySnap.data();
         } else {
-          // Створюємо порожній документ
           await setDoc(diaryRef, diaryData);
         }
 
