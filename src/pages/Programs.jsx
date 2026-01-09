@@ -6,45 +6,45 @@ const Programs = () => {
   const programs = [
     {
       id: "keto",
-      title: "Кето дієта",
-      description: "Низьковуглеводна дієта з високим вмістом жирів для швидкого схуднення",
-      duration: "14-денний план",
       icon: "🥑",
+      title: "Кето дієта",
+      description: "Низьковуглеводна дієта з високим вмістом жирів для швидкого схуднення.",
+      duration: "30 днів",
     },
     {
       id: "intermittent",
-      title: "16:8 Інтервальне голодування",
-      description: "Їжа в 8-годинному вікні, голодування 16 годин",
-      duration: "21-денний план",
       icon: "⏰",
+      title: "16:8 Інтервальне голодування",
+      description: " Їжа в 8-годинному вікні, голодування 16 годин.",
+      duration: "30 днів",
     },
     {
       id: "pescetarian",
-      title: "Пескетаріанство",
-      description: "Рослинна їжа + риба та морепродукти",
-      duration: "21-денний план",
       icon: "🐟",
+      title: "Пескетаріанство",
+      description: "Рослинна дієта з рибою та морепродуктами.",
+      duration: "30 днів",
     },
     {
       id: "vegan",
-      title: "Веган меню",
-      description: "Повністю рослинна дієта без продуктів тваринного походження",
-      duration: "7-денний план",
       icon: "🥦",
+      title: "Веган меню",
+      description: "Повністю рослинна дієта без продуктів тваринного походження.",
+      duration: "30 днів",
     },
     {
       id: "highprotein",
-      title: "Високобілкове схуднення",
-      description: "Збільшений білок для збереження м'язів при схудненні",
-      duration: "Запис у формі",
       icon: "💪",
+      title: "Високобілкове схуднення",
+      description: "Збільшений білок для збереження м'язів при схудненні.",
+      duration: "30 днів",
     },
     {
       id: "vegetarian",
+      icon: "🥗",
       title: "Вегетаріанство",
-      description: "Без м'яса, але з молочними продуктами та яйцями",
-      duration: "21-денний план",
-      icon: "🥚",
+      description: "Без м'яса, але з молочними продуктами та яйцями.",
+      duration: "30 днів",
     },
   ];
 
@@ -54,31 +54,27 @@ const Programs = () => {
         Програми харчування
       </h1>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-          gap: "2rem",
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
         {programs.map((program) => (
           <div
             key={program.id}
             className="card"
-            style={{ cursor: "pointer", background: "#C8D094" }}
+            style={{ cursor: "pointer", transition: "transform 0.3s" }}
             onClick={() => navigate(`/programs/${program.id}`)}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-8px)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
-            <div style={{ textAlign: "center", fontSize: "4rem", marginBottom: "1rem" }}>
+            <div style={{ fontSize: "3rem", textAlign: "center", marginBottom: "1rem" }}>
               {program.icon}
             </div>
-            <h3 style={{ textAlign: "center", color: "#5B7133", marginBottom: "1rem" }}>
+            <h3 style={{ color: "#5B7133", textAlign: "center", marginBottom: "0.5rem" }}>
               {program.title}
             </h3>
-            <p style={{ textAlign: "center", color: "#5B7133", marginBottom: "1rem" }}>
+            <p style={{ color: "#666", textAlign: "center", marginBottom: "1rem" }}>
               {program.description}
             </p>
-            <p style={{ textAlign: "center", fontWeight: "bold", color: "#5B7133" }}>
-              {program.duration}
+            <p style={{ textAlign: "center", color: "#5B7133", fontWeight: "600" }}>
+              Тривалість: {program.duration}
             </p>
           </div>
         ))}
