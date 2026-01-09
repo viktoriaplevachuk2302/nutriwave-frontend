@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -16,9 +16,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Експортуємо функції авторизації
+// Google Provider
 const googleProvider = new GoogleAuthProvider();
 
+// Функції авторизації
 const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -49,4 +50,22 @@ const loginWithEmail = async (email, password) => {
   }
 };
 
-export { auth, db, signInWithGoogle, registerWithEmail, loginWithEmail };
+// Функція виходу (додаємо саме її!)
+const logout = async () => {
+  try {
+    await signOut(auth);
+    console.log("Користувач вийшов");
+  } catch (error) {
+    console.error("Помилка виходу:", error);
+    throw error;
+  }
+};
+
+export { 
+  auth, 
+  db, 
+  signInWithGoogle, 
+  registerWithEmail, 
+  loginWithEmail, 
+  logout  
+};
