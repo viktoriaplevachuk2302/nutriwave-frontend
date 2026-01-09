@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, arrayUnion, increment, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -74,7 +74,7 @@ const Dashboard = () => {
     const date = new Date().toISOString().split("T")[0];
     const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    // Real-time слухач змін
+    // Real-time слухач змін (onSnapshot)
     const unsubscribe = onSnapshot(diaryRef, (snap) => {
       let diaryData = {
         totalCalories: 0,
@@ -140,7 +140,7 @@ const Dashboard = () => {
         totalFat: increment(newFood.fat),
       }, { merge: true });
 
-      alert(" Їжу додано!");
+      alert("Їжу додано!");
       setShowModal(false);
     } catch (err) {
       console.error("Помилка додавання їжі:", err);

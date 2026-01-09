@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Diary = () => {
   const [diary, setDiary] = useState({
@@ -14,7 +14,6 @@ const Diary = () => {
   });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(true);
-
   const [showModal, setShowModal] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState("");
   const [foodForm, setFoodForm] = useState({
@@ -37,6 +36,13 @@ const Diary = () => {
     if (calories <= max * 1.1) return "#f0e68c";
     if (calories <= max * 1.3) return "#ffcc80";
     return "#ff8a80";
+  };
+
+  // Функція форматування дати (була відсутня)
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr + "T00:00:00");
+    const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+    return date.toLocaleDateString("uk-UA", options);
   };
 
   useEffect(() => {
@@ -76,12 +82,6 @@ const Diary = () => {
 
     fetchDiary();
   }, [selectedDate]);
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr + "T00:00:00");
-    const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-    return date.toLocaleDateString("uk-UA", options);
-  };
 
   const openAddModal = (meal) => {
     setSelectedMeal(meal);
@@ -180,7 +180,6 @@ const Diary = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-
       await setDoc(diaryRef, {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),

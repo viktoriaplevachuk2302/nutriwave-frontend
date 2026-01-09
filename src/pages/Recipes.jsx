@@ -792,37 +792,38 @@ const Recipes = () => {
   }, [selectedCategory]);
 
   const handleAddToDiary = async (mealType) => {
-    if (!selectedRecipe || !auth.currentUser) return;
+  if (!selectedRecipe || !auth.currentUser) return;
 
-    const date = new Date().toISOString().split("T")[0];
+  const date = new Date().toISOString().split("T")[0];
 
-    const data = {
-      foodName: selectedRecipe.title,
-      calories: selectedRecipe.calories || 0,
-      protein: selectedRecipe.protein || 0,
-      carbs: selectedRecipe.carbs || 0,
-      fat: selectedRecipe.fat || 0,
-      addedAt: new Date().toISOString(),
-    };
-
-    try {
-      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-      await setDoc(diaryRef, {
-        [`meals.${mealType}`]: arrayUnion(data),
-        totalCalories: increment(data.calories),
-        totalProtein: increment(data.protein),
-        totalCarbs: increment(data.carbs),
-        totalFat: increment(data.fat),
-      }, { merge: true });
-
-      alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
-      setShowAddModal(false);
-      setSelectedRecipe(null);
-    } catch (err) {
-      console.error("Помилка додавання:", err);
-      alert("Помилка додавання рецепту в щоденник");
-    }
+  const data = {
+    mealType, // Додаємо тип прийому їжі (breakfast, lunch тощо)
+    foodName: selectedRecipe.title,
+    calories: selectedRecipe.calories || 0,
+    protein: selectedRecipe.protein || 0,
+    carbs: selectedRecipe.carbs || 0,
+    fat: selectedRecipe.fat || 0,
+    addedAt: new Date().toISOString(),
   };
+
+  try {
+    const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+    await setDoc(diaryRef, {
+      [`meals.${mealType}`]: arrayUnion(data),
+      totalCalories: increment(data.calories),
+      totalProtein: increment(data.protein),
+      totalCarbs: increment(data.carbs),
+      totalFat: increment(data.fat),
+    }, { merge: true });
+
+    alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
+    setShowAddModal(false);
+    setSelectedRecipe(null);
+  } catch (err) {
+    console.error("Помилка додавання:", err);
+    alert("Помилка додавання рецепту в щоденник");
+  }
+};
 
   if (loading) {
     return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження рецептів...</div>;
