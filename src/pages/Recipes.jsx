@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, setDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, setDoc, arrayUnion, increment, getDoc } from "firebase/firestore";
 
 const Recipes = () => {
   const [filteredRecipes, setFilteredRecipes] = useState([]);
@@ -17,7 +17,6 @@ const Recipes = () => {
     dinner: "Вечеря",
     snack: "Перекус",
   };
-
   const recipes = [
     // ==================== СНІДАНОК (15 рецептів) ====================
     {
@@ -792,38 +791,53 @@ const Recipes = () => {
   }, [selectedCategory]);
 
   const handleAddToDiary = async (mealType) => {
-  if (!selectedRecipe || !auth.currentUser) return;
+    if (!selectedRecipe || !auth.currentUser) return;
 
-  const date = new Date().toISOString().split("T")[0];
+    const date = new Date().toISOString().split("T")[0];
 
   const data = {
-    mealType, // Додаємо тип прийому їжі (breakfast, lunch тощо)
-    foodName: selectedRecipe.title,
-    calories: selectedRecipe.calories || 0,
-    protein: selectedRecipe.protein || 0,
-    carbs: selectedRecipe.carbs || 0,
-    fat: selectedRecipe.fat || 0,
-    addedAt: new Date().toISOString(),
-  };
+      mealType, // ← це ключовий рядок — тепер слоти знають, куди додати!
+      foodName: selectedRecipe.title,
+      calories: selectedRecipe.calories || 0,
+      protein: selectedRecipe.protein || 0,
+      carbs: selectedRecipe.carbs || 0,
+      fat: selectedRecipe.fat || 0,
+      addedAt: new Date().toISOString(),
+    };
 
   try {
-    const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
-    await setDoc(diaryRef, {
-      [`meals.${mealType}`]: arrayUnion(data),
-      totalCalories: increment(data.calories),
-      totalProtein: increment(data.protein),
-      totalCarbs: increment(data.carbs),
-      totalFat: increment(data.fat),
-    }, { merge: true });
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
 
-    alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
-    setShowAddModal(false);
-    setSelectedRecipe(null);
-  } catch (err) {
-    console.error("Помилка додавання:", err);
-    alert("Помилка додавання рецепту в щоденник");
-  }
-};
+      // Перевіряємо, чи існує документ
+      const docSnap = await getDoc(diaryRef);
+      if (!docSnap.exists()) {
+        await setDoc(diaryRef, {
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          waterGlasses: 0,
+          waterLiters: 0,
+          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        });
+      }
+
+  await setDoc(diaryRef, {
+        [`meals.${mealType}`]: arrayUnion(data),
+        totalCalories: increment(data.calories),
+        totalProtein: increment(data.protein),
+        totalCarbs: increment(data.carbs),
+        totalFat: increment(data.fat),
+      }, { merge: true });
+
+      alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);
+      setShowAddModal(false);
+      setSelectedRecipe(null);
+    } catch (err) {
+      console.error("Помилка додавання:", err);
+      alert("Помилка додавання рецепту в щоденник");
+    }
+  };
 
   if (loading) {
     return <div style={{ textAlign: "center", padding: "4rem", fontSize: "1.5rem" }}>Завантаження рецептів...</div>;
