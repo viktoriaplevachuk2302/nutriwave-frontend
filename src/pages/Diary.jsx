@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const Diary = () => {
   const [diary, setDiary] = useState({
@@ -38,7 +38,6 @@ const Diary = () => {
     return "#ff8a80";
   };
 
-  // Функція форматування дати (була відсутня)
   const formatDate = (dateStr) => {
     const date = new Date(dateStr + "T00:00:00");
     const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
@@ -46,41 +45,34 @@ const Diary = () => {
   };
 
   useEffect(() => {
-    const fetchDiary = async () => {
-      if (!auth.currentUser) return;
+    if (!auth.currentUser) return;
 
-      setLoading(true);
+    setLoading(true);
 
-      try {
-        const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
-        const docSnap = await getDoc(diaryRef);
+    const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
 
-        let diaryData = {
-          totalCalories: 0,
-          totalProtein: 0,
-          totalCarbs: 0,
-          totalFat: 0,
-          waterGlasses: 0,
-          waterLiters: 0,
-          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        };
+    // Real-time слухач змін (onSnapshot) — тепер дані оновлюються автоматично
+    const unsubscribe = onSnapshot(diaryRef, (snap) => {
+      let diaryData = {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        waterGlasses: 0,
+        waterLiters: 0,
+        meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+      };
 
-        if (docSnap.exists()) {
-          diaryData = docSnap.data();
-        } else {
-          // Створюємо порожній документ, якщо його немає
-          await setDoc(diaryRef, diaryData);
-        }
-
-        setDiary(diaryData);
-      } catch (err) {
-        console.error("Помилка завантаження щоденника:", err);
-      } finally {
-        setLoading(false);
+      if (snap.exists()) {
+        diaryData = snap.data();
       }
-    };
 
-    fetchDiary();
+      setDiary(diaryData);
+    });
+
+    setLoading(false);
+
+    return () => unsubscribe();
   }, [selectedDate]);
 
   const openAddModal = (meal) => {
@@ -103,6 +95,7 @@ const Diary = () => {
 
     try {
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
+
       await setDoc(diaryRef, {
         [`meals.${selectedMeal}`]: arrayUnion(newFood),
         totalCalories: increment(newFood.calories),
@@ -111,20 +104,7 @@ const Diary = () => {
         totalFat: increment(newFood.fat),
       }, { merge: true });
 
-      // Оновлюємо локальний стан
-      setDiary(prev => ({
-        ...prev,
-        totalCalories: (prev.totalCalories || 0) + newFood.calories,
-        totalProtein: (prev.totalProtein || 0) + newFood.protein,
-        totalCarbs: (prev.totalCarbs || 0) + newFood.carbs,
-        totalFat: (prev.totalFat || 0) + newFood.fat,
-        meals: {
-          ...prev.meals,
-          [selectedMeal]: [...(prev.meals[selectedMeal] || []), newFood],
-        },
-      }));
-
-      alert("Їжу додано!");
+      alert(" Їжу додано!");
       setShowModal(false);
     } catch (err) {
       console.error("Помилка додавання їжі:", err);
@@ -180,16 +160,13 @@ const Diary = () => {
     try {
       const date = new Date().toISOString().split("T")[0];
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+
       await setDoc(diaryRef, {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
       }, { merge: true });
 
-      setDiary(prev => ({
-        ...prev,
-        waterGlasses: (prev.waterGlasses || 0) + 1,
-        waterLiters: (prev.waterLiters || 0) + 0.25,
-      }));
+      alert("Воду додано!");
     } catch (err) {
       console.error("Помилка додавання води:", err);
       alert("Помилка додавання води");
