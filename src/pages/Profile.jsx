@@ -14,7 +14,7 @@ const Profile = () => {
     gender: "female",
     activityLevel: "sedentary",
     goal: "lose",
-    selectedProgram: "", // Додано для майбутнього вибору програми
+    selectedProgram: "", // Підтримка вибраної програми
   });
 
   // Формула Міффліна-Сан Жеора
@@ -67,7 +67,7 @@ const Profile = () => {
             gender: res.data.gender || "female",
             activityLevel: res.data.activityLevel || "sedentary",
             goal: res.data.goal || "lose",
-            selectedProgram: res.data.selectedProgram || "", // Підтримка вибраної програми
+            selectedProgram: res.data.selectedProgram || "",
           });
         }
       } catch (err) {
@@ -101,11 +101,11 @@ const Profile = () => {
       );
 
       alert("Профіль збережено!");
-      setProfile(response.data.data); // Оновлюємо профіль одразу
+      setProfile(response.data.data); // Оновлюємо профіль одразу з відповіді
       setIsEditing(false);
     } catch (err) {
       console.error("Помилка збереження:", err);
-      alert("Помилка збереження профілю");
+      alert("Помилка збереження профілю. Перевірте підключення до бекенду.");
     }
   };
 
