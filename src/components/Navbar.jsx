@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { logout } from "../services/firebase";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const Navbar = () => {
   const navigate = useNavigate();

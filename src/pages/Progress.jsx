@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
 import { collection, getDocs, addDoc, query, orderBy } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,

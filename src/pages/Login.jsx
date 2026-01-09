@@ -2,6 +2,7 @@ import { useState } from "react";
 import { signInWithGoogle, registerWithEmail, loginWithEmail } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../services/firebase";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const Login = () => {
   const navigate = useNavigate();

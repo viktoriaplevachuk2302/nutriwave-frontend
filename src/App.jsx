@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { auth } from "./services/firebase";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";

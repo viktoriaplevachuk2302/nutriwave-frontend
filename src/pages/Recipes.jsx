@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, setDoc, arrayUnion, increment, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const Recipes = () => {
   const [filteredRecipes, setFilteredRecipes] = useState([]);

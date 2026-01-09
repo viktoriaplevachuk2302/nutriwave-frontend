@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { auth, db } from "../services/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const ProgramDetail = () => {
   const { id } = useParams();
