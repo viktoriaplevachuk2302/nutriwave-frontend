@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Diary = () => {
   const [diary, setDiary] = useState({
@@ -8,6 +8,8 @@ const Diary = () => {
     totalProtein: 0,
     totalCarbs: 0,
     totalFat: 0,
+    waterGlasses: 0,
+    waterLiters: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
   });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -32,9 +34,9 @@ const Diary = () => {
 
   const getMealCardColor = (calories, max) => {
     if (calories <= max) return "#C8D094";
-    if (calories <= max * 1.1) return "#f0e68c"; // жовтий
-    if (calories <= max * 1.3) return "#ffcc80"; // помаранчевий
-    return "#ff8a80"; // червоний
+    if (calories <= max * 1.1) return "#f0e68c";
+    if (calories <= max * 1.3) return "#ffcc80";
+    return "#ff8a80";
   };
 
   useEffect(() => {
@@ -47,17 +49,24 @@ const Diary = () => {
         const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
         const docSnap = await getDoc(diaryRef);
 
+        let diaryData = {
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          waterGlasses: 0,
+          waterLiters: 0,
+          meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        };
+
         if (docSnap.exists()) {
-          setDiary(docSnap.data());
+          diaryData = docSnap.data();
         } else {
-          setDiary({
-            totalCalories: 0,
-            totalProtein: 0,
-            totalCarbs: 0,
-            totalFat: 0,
-            meals: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          });
+          // Створюємо порожній документ, якщо його немає
+          await setDoc(diaryRef, diaryData);
         }
+
+        setDiary(diaryData);
       } catch (err) {
         console.error("Помилка завантаження щоденника:", err);
       } finally {
@@ -85,7 +94,7 @@ const Diary = () => {
 
     const newFood = {
       foodName: foodForm.foodName,
-      calories: parseInt(foodForm.calories),
+      calories: parseInt(foodForm.calories) || 0,
       protein: parseFloat(foodForm.protein) || 0,
       carbs: parseFloat(foodForm.carbs) || 0,
       fat: parseFloat(foodForm.fat) || 0,
@@ -94,7 +103,7 @@ const Diary = () => {
 
     try {
       const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
-      await updateDoc(diaryRef, {
+      await setDoc(diaryRef, {
         [`meals.${selectedMeal}`]: arrayUnion(newFood),
         totalCalories: increment(newFood.calories),
         totalProtein: increment(newFood.protein),
@@ -105,10 +114,10 @@ const Diary = () => {
       // Оновлюємо локальний стан
       setDiary(prev => ({
         ...prev,
-        totalCalories: prev.totalCalories + newFood.calories,
-        totalProtein: prev.totalProtein + newFood.protein,
-        totalCarbs: prev.totalCarbs + newFood.carbs,
-        totalFat: prev.totalFat + newFood.fat,
+        totalCalories: (prev.totalCalories || 0) + newFood.calories,
+        totalProtein: (prev.totalProtein || 0) + newFood.protein,
+        totalCarbs: (prev.totalCarbs || 0) + newFood.carbs,
+        totalFat: (prev.totalFat || 0) + newFood.fat,
         meals: {
           ...prev.meals,
           [selectedMeal]: [...(prev.meals[selectedMeal] || []), newFood],
@@ -132,28 +141,29 @@ const Diary = () => {
       if (!docSnap.exists()) return;
 
       const diaryData = docSnap.data();
-      const food = diaryData.meals[mealType][index];
+      const foods = diaryData.meals[mealType] || [];
+      const removedFood = foods[index];
 
-      const updatedMeals = diaryData.meals[mealType].filter((_, i) => i !== index);
+      const updatedFoods = foods.filter((_, i) => i !== index);
 
-      await updateDoc(diaryRef, {
-        [`meals.${mealType}`]: updatedMeals,
-        totalCalories: increment(-food.calories),
-        totalProtein: increment(-(food.protein || 0)),
-        totalCarbs: increment(-(food.carbs || 0)),
-        totalFat: increment(-(food.fat || 0)),
-      });
+      await setDoc(diaryRef, {
+        [`meals.${mealType}`]: updatedFoods,
+        totalCalories: increment(-removedFood.calories),
+        totalProtein: increment(-(removedFood.protein || 0)),
+        totalCarbs: increment(-(removedFood.carbs || 0)),
+        totalFat: increment(-(removedFood.fat || 0)),
+      }, { merge: true });
 
       // Оновлюємо локальний стан
       setDiary(prev => ({
         ...prev,
-        totalCalories: prev.totalCalories - food.calories,
-        totalProtein: prev.totalProtein - (food.protein || 0),
-        totalCarbs: prev.totalCarbs - (food.carbs || 0),
-        totalFat: prev.totalFat - (food.fat || 0),
+        totalCalories: (prev.totalCalories || 0) - removedFood.calories,
+        totalProtein: (prev.totalProtein || 0) - (removedFood.protein || 0),
+        totalCarbs: (prev.totalCarbs || 0) - (removedFood.carbs || 0),
+        totalFat: (prev.totalFat || 0) - (removedFood.fat || 0),
         meals: {
           ...prev.meals,
-          [mealType]: prev.meals[mealType].filter((_, i) => i !== index),
+          [mealType]: updatedFoods,
         },
       }));
 
@@ -168,13 +178,14 @@ const Diary = () => {
     if (diary.waterGlasses >= 8) return;
 
     try {
-      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", selectedDate);
-      await updateDoc(diaryRef, {
+      const date = new Date().toISOString().split("T")[0];
+      const diaryRef = doc(db, "users", auth.currentUser.uid, "diary", date);
+
+      await setDoc(diaryRef, {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
       }, { merge: true });
 
-      // Оновлюємо локальний стан
       setDiary(prev => ({
         ...prev,
         waterGlasses: (prev.waterGlasses || 0) + 1,
@@ -228,8 +239,8 @@ const Diary = () => {
 
       {Object.keys(mealData).map((meal) => {
         const { title, range, max } = mealData[meal];
-        const foods = diary.meals[meal] || [];
-        const mealCalories = foods.reduce((sum, f) => sum + f.calories, 0);
+        const foods = diary.meals?.[meal] || [];
+        const mealCalories = foods.reduce((sum, f) => sum + (f.calories || 0), 0);
         const cardColor = getMealCardColor(mealCalories, max);
 
         return (

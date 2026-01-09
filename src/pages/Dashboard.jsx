@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion, increment } from "firebase/firestore";
 
 const Dashboard = () => {
   const [diary, setDiary] = useState({
@@ -40,7 +40,6 @@ const Dashboard = () => {
     return "#ff8a80";
   };
 
-  // Формула Міффліна-Сан Жеора
   const calculateDailyCalories = (p) => {
     if (!p || !p.age || !p.height || !p.currentWeight || !p.gender) return 1465;
 
@@ -91,7 +90,7 @@ const Dashboard = () => {
         if (diarySnap.exists()) {
           diaryData = diarySnap.data();
         } else {
-          // Створюємо порожній документ, якщо його немає
+          // Створюємо порожній документ
           await setDoc(diaryRef, diaryData);
         }
 
