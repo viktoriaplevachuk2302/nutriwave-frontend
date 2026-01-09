@@ -121,6 +121,7 @@ const Dashboard = () => {
     e.preventDefault();
 
     const newFood = {
+      mealType: selectedMeal,
       foodName: foodForm.foodName,
       calories: parseInt(foodForm.calories) || 0,
       protein: parseFloat(foodForm.protein) || 0,
@@ -308,7 +309,7 @@ const Dashboard = () => {
                 value={foodForm.foodName}
                 onChange={(e) => setFoodForm({ ...foodForm, foodName: e.target.value })}
                 required
-                style={{ flex: 1 }}
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
               <input
                 type="number"
@@ -316,7 +317,7 @@ const Dashboard = () => {
                 value={foodForm.calories}
                 onChange={(e) => setFoodForm({ ...foodForm, calories: e.target.value })}
                 required
-                style={{ flex: 1 }}
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
               <input
                 type="number"
@@ -325,7 +326,7 @@ const Dashboard = () => {
                 value={foodForm.protein}
                 onChange={(e) => setFoodForm({ ...foodForm, protein: e.target.value })}
                 required
-                style={{ flex: 1 }}
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
               <input
                 type="number"
@@ -334,7 +335,7 @@ const Dashboard = () => {
                 value={foodForm.carbs}
                 onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
                 required
-                style={{ flex: 1 }}
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
               <input
                 type="number"
@@ -343,7 +344,7 @@ const Dashboard = () => {
                 value={foodForm.fat}
                 onChange={(e) => setFoodForm({ ...foodForm, fat: e.target.value })}
                 required
-                style={{ flex: 1 }}
+                style={{ width: "100%", padding: "0.75rem", marginBottom: "2rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
 
               <div style={{ display: "flex", gap: "1rem" }}>
