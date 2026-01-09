@@ -20,7 +20,7 @@ const Recipes = () => {
 
   useEffect(() => {
     axios
-      .get("https://nutriwave-backend.onrender.com/api/recipes")
+      .get("https://nutriwave-backend.fly.dev/api/recipes")
       .then((res) => {
         setRecipes(res.data);
         setFilteredRecipes(res.data);
@@ -50,7 +50,7 @@ const Recipes = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.post("https://nutriwave-backend.onrender.com/api/diary/meal", data, {
+      await axios.post("https://nutriwave-backend.fly.dev/api/diary/meal", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert(`${selectedRecipe.title} додано до ${categories[mealType]}!`);

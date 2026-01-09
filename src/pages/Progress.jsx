@@ -29,13 +29,13 @@ const Progress = () => {
         const token = await auth.currentUser.getIdToken();
 
         // Завантажуємо історію ваги
-        const weightRes = await axios.get("https://nutriwave-backend.onrender.com/api/weight", {
+        const weightRes = await axios.get("https://nutriwave-backend.fly.dev/api/weight", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setWeightHistory(weightRes.data.sort((a, b) => a.date.localeCompare(b.date)));
 
         // Завантажуємо профіль (для майбутнього використання)
-        const profileRes = await axios.get("https://nutriwave-backend.onrender.com/api/users/me", {
+        const profileRes = await axios.get("https://nutriwave-backend.fly.dev/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(profileRes.data);
@@ -56,7 +56,7 @@ const Progress = () => {
     try {
       const token = await auth.currentUser.getIdToken();
       await axios.post(
-        "https://nutriwave-backend.onrender.com/api/weight",
+        "https://nutriwave-backend.fly.dev/api/weight",
         { weight: parseFloat(currentWeight) },
         { headers: { Authorization: `Bearer ${token}` } }
       );

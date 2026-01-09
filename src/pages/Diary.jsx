@@ -44,7 +44,7 @@ const Diary = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await axios.get(`https://nutriwave-backend.onrender.com/api/diary${date ? '?date=' + date : ''}`, {
+      const res = await axios.get(`https://nutriwave-backend.fly.dev/api/diary${date ? '?date=' + date : ''}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDiary(res.data || {
@@ -99,7 +99,7 @@ const Diary = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.post("https://nutriwave-backend.onrender.com/api/diary/meal", data, {
+      await axios.post("https://nutriwave-backend.fly.dev/api/diary/meal", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Їжу додано!");
@@ -115,7 +115,7 @@ const Diary = () => {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.delete("https://nutriwave-backend.onrender.com/api/diary/meal", {
+      await axios.delete("https://nutriwave-backend.fly.dev/api/diary/meal", {
         headers: { Authorization: `Bearer ${token}` },
         data: { mealType, index, date: selectedDate },
       });

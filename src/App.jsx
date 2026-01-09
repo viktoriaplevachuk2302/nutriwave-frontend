@@ -24,7 +24,7 @@ function App() {
       if (currentUser) {
         try {
           const token = await currentUser.getIdToken();
-          const res = await axios.get("https://nutriwave-backend.onrender.com/api/users/me", {
+          const res = await axios.get("https://nutriwave-backend.fly.dev/api/users/me", {
             headers: { Authorization: `Bearer ${token}` },
           });
           setHasProfile(!!res.data.age); // профіль заповнений, якщо є вік
