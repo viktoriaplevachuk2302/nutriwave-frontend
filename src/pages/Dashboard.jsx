@@ -140,7 +140,7 @@ const Dashboard = () => {
         totalFat: increment(newFood.fat),
       }, { merge: true });
 
-      alert("Їжу додано!");
+      alert(" Їжу додано!");
       setShowModal(false);
     } catch (err) {
       console.error("Помилка додавання їжі:", err);
@@ -158,7 +158,6 @@ const Dashboard = () => {
         waterGlasses: increment(1),
         waterLiters: increment(0.25),
       }, { merge: true });
-
     } catch (err) {
       console.error("Помилка додавання води:", err);
       alert("Помилка додавання води");
@@ -199,7 +198,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr", gap: "1.5rem", marginTop: "2rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginTop: "2rem" }}>
             <div className="macro-item">
               <strong>Вуглеводи</strong>
               <div>{diary.totalCarbs || 0}г</div>
@@ -331,7 +330,7 @@ const Dashboard = () => {
                 step="0.1"
                 placeholder="Вуглеводи (г)"
                 value={foodForm.carbs}
-                onChange={(e) => setForm({ ...form, carbs: e.target.value })}
+                onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
                 required
                 style={{ width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "12px", border: "1px solid #C8D094" }}
               />
