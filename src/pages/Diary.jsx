@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
+import { useNavigate } from "react-router-dom";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const Diary = () => {
