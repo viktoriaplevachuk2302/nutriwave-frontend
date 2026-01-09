@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, arrayUnion, increment } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAhjyHQwNDgXOIyvPS5Yr4_PCDMt4JBuUQ",
@@ -13,6 +13,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Експортуємо auth і db
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -60,6 +62,7 @@ const logout = async () => {
   }
 };
 
+// Експортуємо ВСІ потрібні функції
 export { 
   auth, 
   db, 
